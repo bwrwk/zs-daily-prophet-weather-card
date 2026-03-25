@@ -47,6 +47,15 @@ const TRANSLATIONS = {
         forecastTitle: 'Forecast',
         almanacTitle: 'Almanac',
         noForecast: 'Forecast quills are quiet today.',
+        chanceOfRain: 'Chance of rain',
+        low: 'Low',
+        high: 'High',
+        windShort: 'Wind',
+        alertLevels: {
+            info: 'Notice',
+            warning: 'Warning',
+            critical: 'Emergency',
+        },
         facts: {
             humidity: 'Humidity',
             wind: 'Wind',
@@ -85,6 +94,15 @@ const TRANSLATIONS = {
         forecastTitle: 'Prognoza',
         almanacTitle: 'Almanach',
         noForecast: 'Dziś sowy nie przyniosły prognozy.',
+        chanceOfRain: 'Szansa opadów',
+        low: 'Min',
+        high: 'Max',
+        windShort: 'Wiatr',
+        alertLevels: {
+            info: 'Komunikat',
+            warning: 'Ostrzeżenie',
+            critical: 'Alarm',
+        },
         facts: {
             humidity: 'Wilgotność',
             wind: 'Wiatr',
@@ -198,6 +216,20 @@ function cardinalFromBearing(bearing) {
     const index = Math.round((((bearing % 360) + 360) % 360) / 45) % 8;
     return directions[index];
 }
+function formatForecastTemperature(item, language) {
+    const t = getTranslations(language);
+    if (item.temperature === undefined && item.templow === undefined) {
+        return '-';
+    }
+    if (item.templow === undefined || item.templow === item.temperature) {
+        return item.temperature !== undefined ? `${Math.round(item.temperature)}°` : '-';
+    }
+    return `${t.high} ${Math.round(item.temperature || 0)}°  ${t.low} ${Math.round(item.templow)}°`;
+}
+function formatAlertSeverity(alert, language) {
+    const t = getTranslations(language);
+    return t.alertLevels[alert.severity];
+}
 function buildHeadline(snapshot, language) {
     const t = getTranslations(language);
     const condition = t.conditions[snapshot.condition] || snapshot.condition || t.conditions.cloudy;
@@ -297,11 +329,42 @@ function normalizeForecast(raw) {
         precipitation: Number.isFinite(Number(item?.precipitation)) ? Number(item.precipitation) : undefined,
         precipitation_probability: Number.isFinite(Number(item?.precipitation_probability)) ? Number(item.precipitation_probability) : undefined,
         wind_speed: Number.isFinite(Number(item?.wind_speed)) ? Number(item.wind_speed) : undefined,
+        is_daytime: item?.is_daytime === undefined ? undefined : Boolean(item.is_daytime),
+    }));
+}
+function deriveAlertSeverity(entity) {
+    const raw = String(entity.attributes?.severity
+        || entity.attributes?.level
+        || entity.state
+        || '').toLowerCase();
+    if (['critical', 'severe', 'extreme', 'danger', 'on'].includes(raw)) {
+        return 'critical';
+    }
+    if (['warning', 'watch', 'moderate', 'problem'].includes(raw)) {
+        return 'warning';
+    }
+    return 'info';
+}
+function normalizeAlerts(entities) {
+    return entities
+        .filter((entity) => !['off', 'false', '0', 'idle', 'unknown', 'unavailable'].includes(String(entity.state).toLowerCase()))
+        .map((entity) => ({
+        entityId: entity.entity_id,
+        title: String(entity.attributes?.headline
+            || entity.attributes?.title
+            || entity.attributes?.friendly_name
+            || entity.entity_id),
+        severity: deriveAlertSeverity(entity),
+        description: String(entity.attributes?.description
+            || entity.attributes?.message
+            || entity.attributes?.event
+            || '').trim() || undefined,
     }));
 }
 function createWeatherSnapshot(hass, config) {
     const weatherEntity = getEntity(hass, config.entity);
     const overrides = config.entities || {};
+    const forecastEntity = getEntity(hass, overrides.forecast_entity);
     const humidityEntity = getEntity(hass, overrides.humidity);
     const pressureEntity = getEntity(hass, overrides.pressure);
     const windSpeedEntity = getEntity(hass, overrides.wind_speed);
@@ -314,7 +377,9 @@ function createWeatherSnapshot(hass, config) {
     const sunriseEntity = getEntity(hass, overrides.sunrise);
     const sunsetEntity = getEntity(hass, overrides.sunset);
     const alertEntities = (overrides.alerts || []).map((entityId) => getEntity(hass, entityId)).filter(Boolean);
-    const lastUpdated = weatherEntity?.attributes?.forecast?.[0]?.datetime || weatherEntity?.attributes?.last_updated;
+    const forecastSource = normalizeForecast(forecastEntity?.attributes?.[overrides.forecast_attribute || 'forecast']
+        ?? weatherEntity?.attributes?.forecast);
+    const lastUpdated = forecastSource[0]?.datetime || weatherEntity?.attributes?.last_updated;
     const lastUpdatedLabel = lastUpdated
         ? new Date(lastUpdated).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
         : new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
@@ -336,10 +401,8 @@ function createWeatherSnapshot(hass, config) {
         sunset: sunsetEntity?.state || readStringAttribute(weatherEntity, ['sunset']),
         friendlyName: config.location || String(weatherEntity?.attributes?.friendly_name || config.title || 'Hogwarts'),
         attribution: readStringAttribute(weatherEntity, ['attribution']),
-        forecast: normalizeForecast(weatherEntity?.attributes?.forecast),
-        alerts: alertEntities
-            .filter((entity) => ['on', 'true', 'problem', 'warning'].includes(String(entity.state).toLowerCase()))
-            .map((entity) => String(entity.attributes?.friendly_name || entity.entity_id)),
+        forecast: forecastSource,
+        alerts: normalizeAlerts(alertEntities),
         lastUpdatedLabel,
     };
 }
@@ -430,6 +493,18 @@ function formatForecastLabel(item, mode) {
         weekday: 'short',
     });
 }
+function resolveForecastMode(configuredMode, items) {
+    if (configuredMode === 'hourly' || configuredMode === 'daily') {
+        return configuredMode;
+    }
+    const first = items[0]?.datetime ? new Date(items[0].datetime) : undefined;
+    const second = items[1]?.datetime ? new Date(items[1].datetime) : undefined;
+    if (!first || !second || Number.isNaN(first.getTime()) || Number.isNaN(second.getTime())) {
+        return 'daily';
+    }
+    const diff = Math.abs(second.getTime() - first.getTime());
+    return diff <= 1000 * 60 * 60 * 6 ? 'hourly' : 'daily';
+}
 class ZSDailyProphetCard extends i$2 {
     static getStubConfig() {
         return {
@@ -502,13 +577,25 @@ class ZSDailyProphetCard extends i$2 {
             '--zs-prophet-hero-padding': density.heroPadding,
         };
     }
-    renderForecastItem(item) {
-        const mode = this.config.layout?.forecast_mode || 'daily';
+    renderForecastItem(item, mode) {
+        const conditionLabel = this.t.conditions[item.condition] || item.condition || '';
+        const rainChance = item.precipitation_probability !== undefined ? `${this.t.chanceOfRain}: ${Math.round(item.precipitation_probability)}%` : '';
+        const precipitation = item.precipitation !== undefined ? `${item.precipitation.toFixed(1)} mm` : '';
+        const wind = item.wind_speed !== undefined ? `${this.t.windShort}: ${Math.round(item.wind_speed)}` : '';
         return b `
       <div class="forecast-item">
         <div class="forecast-name">${formatForecastLabel(item, mode)}</div>
-        <div class="forecast-temp">${item.temperature !== undefined ? `${Math.round(item.temperature)}°` : '-'}</div>
-        <div class="forecast-extra">${getConditionIcon(item.condition || 'cloudy')} ${item.condition || ''}</div>
+        <div class="forecast-main">
+          <div class="forecast-temp">${mode === 'hourly'
+            ? (item.temperature !== undefined ? `${Math.round(item.temperature)}°` : '-')
+            : formatForecastTemperature(item, this.language)}</div>
+          <div class="forecast-extra forecast-condition">${getConditionIcon(item.condition || 'cloudy')} ${conditionLabel}</div>
+        </div>
+        <div class="forecast-meta">
+          ${rainChance ? b `<div>${rainChance}</div>` : ''}
+          ${precipitation ? b `<div>${precipitation}</div>` : ''}
+          ${wind ? b `<div>${wind}</div>` : ''}
+        </div>
       </div>
     `;
     }
@@ -524,6 +611,7 @@ class ZSDailyProphetCard extends i$2 {
                 ? this.config.content.headline_template
                 : buildHeadline(snapshot, this.language);
         const forecastItems = snapshot.forecast.slice(0, this.config.layout?.forecast_items || 5);
+        const forecastMode = resolveForecastMode(this.config.layout?.forecast_mode || 'daily', forecastItems);
         const conditionLabel = this.t.conditions[snapshot.condition] || snapshot.condition;
         return b `
       <ha-card style=${o(this.computeCardStyle())} @click=${() => this.openMoreInfo()}>
@@ -569,7 +657,15 @@ class ZSDailyProphetCard extends i$2 {
               <div class="section-header">
                 <div class="section-title">${this.t.specialEdition}</div>
               </div>
-              ${snapshot.alerts.map((alert) => b `<div class="alert">${alert}</div>`)}
+              <div class="alert-list">
+                ${snapshot.alerts.map((alert) => b `
+                  <div class=${`alert ${alert.severity}`}>
+                    <div class="alert-kicker">${formatAlertSeverity(alert, this.language)}</div>
+                    <div class="alert-title">${alert.title}</div>
+                    ${alert.description ? b `<div class="alert-description">${alert.description}</div>` : ''}
+                  </div>
+                `)}
+              </div>
             </section>
           `}
 
@@ -577,10 +673,10 @@ class ZSDailyProphetCard extends i$2 {
             <section class="section">
               <div class="section-header">
                 <div class="section-title">${this.t.forecastTitle}</div>
-                <div class="section-meta">${forecastItems.length} items</div>
+                <div class="section-meta">${forecastMode}</div>
               </div>
               ${forecastItems.length
-            ? b `<div class="forecast">${forecastItems.map((item) => this.renderForecastItem(item))}</div>`
+            ? b `<div class="forecast">${forecastItems.map((item) => this.renderForecastItem(item, forecastMode))}</div>`
             : b `<div class="empty">${this.t.noForecast}</div>`}
             </section>
           `}
@@ -876,10 +972,73 @@ ZSDailyProphetCard.styles = i$5 `
         rgba(255, 248, 230, 0.16);
     }
 
+    .forecast-main {
+      display: grid;
+      gap: 6px;
+    }
+
+    .forecast-meta {
+      display: grid;
+      gap: 4px;
+      margin-top: 8px;
+      font-family: var(--zs-prophet-copy);
+      color: var(--zs-prophet-muted);
+      font-size: 0.92rem;
+    }
+
+    .forecast-condition {
+      text-transform: capitalize;
+    }
+
+    .alert-list {
+      display: grid;
+      gap: 10px;
+    }
+
     .alert {
       padding: 14px 16px;
       background: linear-gradient(180deg, rgba(166,56,40,0.12), rgba(141,43,31,0.18));
       color: var(--zs-prophet-alert);
+    }
+
+    .alert.info {
+      background: linear-gradient(180deg, rgba(98,86,61,0.1), rgba(98,86,61,0.16));
+      color: var(--zs-prophet-ink);
+    }
+
+    .alert.warning {
+      background: linear-gradient(180deg, rgba(184,118,38,0.12), rgba(160,95,22,0.18));
+      color: #7a4312;
+    }
+
+    .alert.critical {
+      background: linear-gradient(180deg, rgba(166,56,40,0.12), rgba(141,43,31,0.18));
+      color: var(--zs-prophet-alert);
+    }
+
+    .alert-kicker,
+    .alert-description {
+      font-family: var(--zs-prophet-copy);
+    }
+
+    .alert-kicker {
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.84rem;
+      opacity: 0.85;
+    }
+
+    .alert-title {
+      font-family: var(--zs-prophet-title);
+      font-size: 1.1rem;
+      line-height: 1.05;
+    }
+
+    .alert-description {
+      margin-top: 6px;
+      font-size: 0.98rem;
+      line-height: 1.15;
     }
 
     .fact-label {

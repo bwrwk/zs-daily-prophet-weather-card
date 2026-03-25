@@ -53,7 +53,7 @@ style:
   show_forecast: true
   show_alerts: true
 layout:
-  forecast_mode: daily
+  forecast_mode: auto
   forecast_items: 5
   facts:
     - humidity
@@ -64,6 +64,8 @@ content:
   headline_mode: auto
   condition_labels: pl
 entities:
+  forecast_entity: sensor.weather_home_daily
+  forecast_attribute: forecast
   humidity: sensor.outdoor_humidity
   pressure: sensor.outdoor_pressure
   wind_speed: sensor.wind_speed
@@ -71,6 +73,56 @@ entities:
   apparent_temperature: sensor.feels_like
   sunrise: sensor.sun_next_rising
   sunset: sensor.sun_next_setting
+  alerts:
+    - binary_sensor.weather_warning
+```
+
+## Data Sources
+
+The card is designed around `weather.*` as the primary source.
+
+- `entity: weather.home` provides the current weather state and headline data.
+- If your Home Assistant setup does not expose forecast data directly on the `weather.*` entity, use `entities.forecast_entity`.
+- `entities.forecast_entity` should point to a helper or template sensor whose attribute contains a forecast array.
+- `entities.forecast_attribute` defaults to `forecast`.
+
+Example bridge pattern for newer Home Assistant setups:
+
+```yaml
+type: custom:zs-daily-prophet-card
+entity: weather.home
+entities:
+  forecast_entity: sensor.weather_home_daily
+```
+
+## Forecast and Alerts
+
+Forecast rendering now supports:
+
+- `forecast_mode: auto` to infer hourly vs daily from timestamps
+- `forecast_mode: hourly`
+- `forecast_mode: daily`
+- precipitation amount and probability when available
+- daily high/low presentation when `templow` is present
+
+Alerts support one or more entities in `entities.alerts`.
+
+Useful alert attributes if your entity exposes them:
+
+- `headline`
+- `title`
+- `description`
+- `message`
+- `severity`
+
+Example:
+
+```yaml
+type: custom:zs-daily-prophet-card
+entity: weather.home
+entities:
+  alerts:
+    - binary_sensor.meteo_warning
 ```
 
 ## Development

@@ -33,6 +33,14 @@ export type ForecastItem = {
   precipitation?: number;
   precipitation_probability?: number;
   wind_speed?: number;
+  is_daytime?: boolean;
+};
+
+export type WeatherAlert = {
+  entityId: string;
+  title: string;
+  severity: 'info' | 'warning' | 'critical';
+  description?: string;
 };
 
 export type FactKey =
@@ -76,6 +84,8 @@ export type ContentConfig = {
 };
 
 export type EntityOverrides = {
+  forecast_entity?: string;
+  forecast_attribute?: string;
   apparent_temperature?: string;
   humidity?: string;
   pressure?: string;
@@ -132,6 +142,6 @@ export type WeatherSnapshot = {
   friendlyName: string;
   attribution?: string;
   forecast: ForecastItem[];
-  alerts: string[];
+  alerts: WeatherAlert[];
   lastUpdatedLabel: string;
 };

@@ -2,7 +2,7 @@ import { LitElement, css, html } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
 import { getLanguage, getTranslations } from './i18n';
 import { PRESET_STYLES, getDensityValues } from './presets';
-import { buildFacts, buildHeadline, formatTime } from './presenters';
+import { buildFacts, buildHeadline, formatAlertSeverity, formatForecastTemperature, formatTime } from './presenters';
 import type { CardConfig, FactKey, ForecastItem, HomeAssistant } from './types';
 import { createWeatherSnapshot } from './weather';
 
@@ -104,6 +104,22 @@ function formatForecastLabel(item: ForecastItem, mode: 'auto' | 'hourly' | 'dail
   return date.toLocaleDateString([], {
     weekday: 'short',
   });
+}
+
+function resolveForecastMode(configuredMode: 'auto' | 'hourly' | 'daily', items: ForecastItem[]): 'hourly' | 'daily' {
+  if (configuredMode === 'hourly' || configuredMode === 'daily') {
+    return configuredMode;
+  }
+
+  const first = items[0]?.datetime ? new Date(items[0].datetime) : undefined;
+  const second = items[1]?.datetime ? new Date(items[1].datetime) : undefined;
+
+  if (!first || !second || Number.isNaN(first.getTime()) || Number.isNaN(second.getTime())) {
+    return 'daily';
+  }
+
+  const diff = Math.abs(second.getTime() - first.getTime());
+  return diff <= 1000 * 60 * 60 * 6 ? 'hourly' : 'daily';
 }
 
 class ZSDailyProphetCard extends LitElement {
@@ -389,10 +405,73 @@ class ZSDailyProphetCard extends LitElement {
         rgba(255, 248, 230, 0.16);
     }
 
+    .forecast-main {
+      display: grid;
+      gap: 6px;
+    }
+
+    .forecast-meta {
+      display: grid;
+      gap: 4px;
+      margin-top: 8px;
+      font-family: var(--zs-prophet-copy);
+      color: var(--zs-prophet-muted);
+      font-size: 0.92rem;
+    }
+
+    .forecast-condition {
+      text-transform: capitalize;
+    }
+
+    .alert-list {
+      display: grid;
+      gap: 10px;
+    }
+
     .alert {
       padding: 14px 16px;
       background: linear-gradient(180deg, rgba(166,56,40,0.12), rgba(141,43,31,0.18));
       color: var(--zs-prophet-alert);
+    }
+
+    .alert.info {
+      background: linear-gradient(180deg, rgba(98,86,61,0.1), rgba(98,86,61,0.16));
+      color: var(--zs-prophet-ink);
+    }
+
+    .alert.warning {
+      background: linear-gradient(180deg, rgba(184,118,38,0.12), rgba(160,95,22,0.18));
+      color: #7a4312;
+    }
+
+    .alert.critical {
+      background: linear-gradient(180deg, rgba(166,56,40,0.12), rgba(141,43,31,0.18));
+      color: var(--zs-prophet-alert);
+    }
+
+    .alert-kicker,
+    .alert-description {
+      font-family: var(--zs-prophet-copy);
+    }
+
+    .alert-kicker {
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.84rem;
+      opacity: 0.85;
+    }
+
+    .alert-title {
+      font-family: var(--zs-prophet-title);
+      font-size: 1.1rem;
+      line-height: 1.05;
+    }
+
+    .alert-description {
+      margin-top: 6px;
+      font-size: 0.98rem;
+      line-height: 1.15;
     }
 
     .fact-label {
@@ -532,13 +611,26 @@ class ZSDailyProphetCard extends LitElement {
     };
   }
 
-  renderForecastItem(item: ForecastItem) {
-    const mode = this.config.layout?.forecast_mode || 'daily';
+  renderForecastItem(item: ForecastItem, mode: 'hourly' | 'daily') {
+    const conditionLabel = this.t.conditions[item.condition as keyof typeof this.t.conditions] || item.condition || '';
+    const rainChance = item.precipitation_probability !== undefined ? `${this.t.chanceOfRain}: ${Math.round(item.precipitation_probability)}%` : '';
+    const precipitation = item.precipitation !== undefined ? `${item.precipitation.toFixed(1)} mm` : '';
+    const wind = item.wind_speed !== undefined ? `${this.t.windShort}: ${Math.round(item.wind_speed)}` : '';
+
     return html`
       <div class="forecast-item">
         <div class="forecast-name">${formatForecastLabel(item, mode)}</div>
-        <div class="forecast-temp">${item.temperature !== undefined ? `${Math.round(item.temperature)}°` : '-'}</div>
-        <div class="forecast-extra">${getConditionIcon(item.condition || 'cloudy')} ${item.condition || ''}</div>
+        <div class="forecast-main">
+          <div class="forecast-temp">${mode === 'hourly'
+            ? (item.temperature !== undefined ? `${Math.round(item.temperature)}°` : '-')
+            : formatForecastTemperature(item, this.language)}</div>
+          <div class="forecast-extra forecast-condition">${getConditionIcon(item.condition || 'cloudy')} ${conditionLabel}</div>
+        </div>
+        <div class="forecast-meta">
+          ${rainChance ? html`<div>${rainChance}</div>` : ''}
+          ${precipitation ? html`<div>${precipitation}</div>` : ''}
+          ${wind ? html`<div>${wind}</div>` : ''}
+        </div>
       </div>
     `;
   }
@@ -556,6 +648,7 @@ class ZSDailyProphetCard extends LitElement {
         ? this.config.content.headline_template
         : buildHeadline(snapshot, this.language);
     const forecastItems = snapshot.forecast.slice(0, this.config.layout?.forecast_items || 5);
+    const forecastMode = resolveForecastMode(this.config.layout?.forecast_mode || 'daily', forecastItems);
     const conditionLabel = this.t.conditions[snapshot.condition as keyof typeof this.t.conditions] || snapshot.condition;
 
     return html`
@@ -602,7 +695,15 @@ class ZSDailyProphetCard extends LitElement {
               <div class="section-header">
                 <div class="section-title">${this.t.specialEdition}</div>
               </div>
-              ${snapshot.alerts.map((alert) => html`<div class="alert">${alert}</div>`)}
+              <div class="alert-list">
+                ${snapshot.alerts.map((alert) => html`
+                  <div class=${`alert ${alert.severity}`}>
+                    <div class="alert-kicker">${formatAlertSeverity(alert, this.language)}</div>
+                    <div class="alert-title">${alert.title}</div>
+                    ${alert.description ? html`<div class="alert-description">${alert.description}</div>` : ''}
+                  </div>
+                `)}
+              </div>
             </section>
           `}
 
@@ -610,10 +711,10 @@ class ZSDailyProphetCard extends LitElement {
             <section class="section">
               <div class="section-header">
                 <div class="section-title">${this.t.forecastTitle}</div>
-                <div class="section-meta">${forecastItems.length} items</div>
+                <div class="section-meta">${forecastMode}</div>
               </div>
               ${forecastItems.length
-                ? html`<div class="forecast">${forecastItems.map((item) => this.renderForecastItem(item))}</div>`
+                ? html`<div class="forecast">${forecastItems.map((item) => this.renderForecastItem(item, forecastMode))}</div>`
                 : html`<div class="empty">${this.t.noForecast}</div>`}
             </section>
           `}

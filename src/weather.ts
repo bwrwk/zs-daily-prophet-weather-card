@@ -1,4 +1,4 @@
-import type { CardConfig, ForecastItem, HassEntity, HomeAssistant, WeatherSnapshot } from './types';
+import type { CardConfig, ForecastItem, HassEntity, HomeAssistant, WeatherAlert, WeatherSnapshot } from './types';
 
 function getEntity(hass: HomeAssistant | undefined, entityId?: string): HassEntity | undefined {
   if (!hass || !entityId) {
@@ -52,12 +52,54 @@ function normalizeForecast(raw: any): ForecastItem[] {
     precipitation: Number.isFinite(Number(item?.precipitation)) ? Number(item.precipitation) : undefined,
     precipitation_probability: Number.isFinite(Number(item?.precipitation_probability)) ? Number(item.precipitation_probability) : undefined,
     wind_speed: Number.isFinite(Number(item?.wind_speed)) ? Number(item.wind_speed) : undefined,
+    is_daytime: item?.is_daytime === undefined ? undefined : Boolean(item.is_daytime),
   }));
+}
+
+function deriveAlertSeverity(entity: HassEntity): WeatherAlert['severity'] {
+  const raw = String(
+    entity.attributes?.severity
+      || entity.attributes?.level
+      || entity.state
+      || '',
+  ).toLowerCase();
+
+  if (['critical', 'severe', 'extreme', 'danger', 'on'].includes(raw)) {
+    return 'critical';
+  }
+
+  if (['warning', 'watch', 'moderate', 'problem'].includes(raw)) {
+    return 'warning';
+  }
+
+  return 'info';
+}
+
+function normalizeAlerts(entities: HassEntity[]): WeatherAlert[] {
+  return entities
+    .filter((entity) => !['off', 'false', '0', 'idle', 'unknown', 'unavailable'].includes(String(entity.state).toLowerCase()))
+    .map((entity) => ({
+      entityId: entity.entity_id,
+      title: String(
+        entity.attributes?.headline
+          || entity.attributes?.title
+          || entity.attributes?.friendly_name
+          || entity.entity_id,
+      ),
+      severity: deriveAlertSeverity(entity),
+      description: String(
+        entity.attributes?.description
+          || entity.attributes?.message
+          || entity.attributes?.event
+          || '',
+      ).trim() || undefined,
+    }));
 }
 
 export function createWeatherSnapshot(hass: HomeAssistant, config: CardConfig): WeatherSnapshot {
   const weatherEntity = getEntity(hass, config.entity);
   const overrides = config.entities || {};
+  const forecastEntity = getEntity(hass, overrides.forecast_entity);
 
   const humidityEntity = getEntity(hass, overrides.humidity);
   const pressureEntity = getEntity(hass, overrides.pressure);
@@ -72,7 +114,12 @@ export function createWeatherSnapshot(hass: HomeAssistant, config: CardConfig): 
   const sunsetEntity = getEntity(hass, overrides.sunset);
   const alertEntities = (overrides.alerts || []).map((entityId) => getEntity(hass, entityId)).filter(Boolean) as HassEntity[];
 
-  const lastUpdated = weatherEntity?.attributes?.forecast?.[0]?.datetime || weatherEntity?.attributes?.last_updated;
+  const forecastSource = normalizeForecast(
+    forecastEntity?.attributes?.[overrides.forecast_attribute || 'forecast']
+      ?? weatherEntity?.attributes?.forecast,
+  );
+
+  const lastUpdated = forecastSource[0]?.datetime || weatherEntity?.attributes?.last_updated;
   const lastUpdatedLabel = lastUpdated
     ? new Date(lastUpdated).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
     : new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
@@ -95,11 +142,8 @@ export function createWeatherSnapshot(hass: HomeAssistant, config: CardConfig): 
     sunset: sunsetEntity?.state || readStringAttribute(weatherEntity, ['sunset']),
     friendlyName: config.location || String(weatherEntity?.attributes?.friendly_name || config.title || 'Hogwarts'),
     attribution: readStringAttribute(weatherEntity, ['attribution']),
-    forecast: normalizeForecast(weatherEntity?.attributes?.forecast),
-    alerts: alertEntities
-      .filter((entity) => ['on', 'true', 'problem', 'warning'].includes(String(entity.state).toLowerCase()))
-      .map((entity) => String(entity.attributes?.friendly_name || entity.entity_id)),
+    forecast: forecastSource,
+    alerts: normalizeAlerts(alertEntities),
     lastUpdatedLabel,
   };
 }
-

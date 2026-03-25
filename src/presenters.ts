@@ -1,5 +1,5 @@
 import { getTranslations } from './i18n';
-import type { FactKey, PresentedFact, WeatherSnapshot } from './types';
+import type { FactKey, ForecastItem, PresentedFact, WeatherAlert, WeatherSnapshot } from './types';
 
 export function formatNumber(value: number | undefined, fractionDigits = 0): string {
   if (value === undefined || Number.isNaN(value)) {
@@ -36,6 +36,25 @@ export function cardinalFromBearing(bearing?: number): string {
   const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
   const index = Math.round((((bearing % 360) + 360) % 360) / 45) % 8;
   return directions[index];
+}
+
+export function formatForecastTemperature(item: ForecastItem, language: 'pl' | 'en'): string {
+  const t = getTranslations(language);
+
+  if (item.temperature === undefined && item.templow === undefined) {
+    return '-';
+  }
+
+  if (item.templow === undefined || item.templow === item.temperature) {
+    return item.temperature !== undefined ? `${Math.round(item.temperature)}°` : '-';
+  }
+
+  return `${t.high} ${Math.round(item.temperature || 0)}°  ${t.low} ${Math.round(item.templow)}°`;
+}
+
+export function formatAlertSeverity(alert: WeatherAlert, language: 'pl' | 'en'): string {
+  const t = getTranslations(language);
+  return t.alertLevels[alert.severity];
 }
 
 export function buildHeadline(snapshot: WeatherSnapshot, language: 'pl' | 'en'): string {

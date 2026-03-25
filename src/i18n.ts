@@ -8,6 +8,15 @@ const TRANSLATIONS = {
     forecastTitle: 'Forecast',
     almanacTitle: 'Almanac',
     noForecast: 'Forecast quills are quiet today.',
+    chanceOfRain: 'Chance of rain',
+    low: 'Low',
+    high: 'High',
+    windShort: 'Wind',
+    alertLevels: {
+      info: 'Notice',
+      warning: 'Warning',
+      critical: 'Emergency',
+    },
     facts: {
       humidity: 'Humidity',
       wind: 'Wind',
@@ -46,6 +55,15 @@ const TRANSLATIONS = {
     forecastTitle: 'Prognoza',
     almanacTitle: 'Almanach',
     noForecast: 'Dziś sowy nie przyniosły prognozy.',
+    chanceOfRain: 'Szansa opadów',
+    low: 'Min',
+    high: 'Max',
+    windShort: 'Wiatr',
+    alertLevels: {
+      info: 'Komunikat',
+      warning: 'Ostrzeżenie',
+      critical: 'Alarm',
+    },
     facts: {
       humidity: 'Wilgotność',
       wind: 'Wiatr',
@@ -85,4 +103,3 @@ export function getLanguage(hass?: { language?: string; locale?: { language?: st
 export function getTranslations(language: 'pl' | 'en') {
   return TRANSLATIONS[language] || TRANSLATIONS.en;
 }
-

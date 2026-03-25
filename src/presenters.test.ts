@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildFacts, buildHeadline, cardinalFromBearing } from './presenters';
-import type { WeatherSnapshot } from './types';
+import { buildFacts, buildHeadline, cardinalFromBearing, formatAlertSeverity, formatForecastTemperature } from './presenters';
+import type { WeatherAlert, WeatherSnapshot } from './types';
 
 const baseSnapshot: WeatherSnapshot = {
   entityId: 'weather.home',
@@ -38,5 +38,18 @@ describe('presenters', () => {
 
   it('maps bearing to cardinal direction', () => {
     expect(cardinalFromBearing(225)).toBe('SW');
+  });
+
+  it('formats daily forecast high and low', () => {
+    expect(formatForecastTemperature({ temperature: 17, templow: 8 }, 'pl')).toContain('Max 17');
+  });
+
+  it('formats localized alert severity', () => {
+    const alert: WeatherAlert = {
+      entityId: 'binary_sensor.storm',
+      title: 'Storm',
+      severity: 'critical',
+    };
+    expect(formatAlertSeverity(alert, 'pl')).toBe('Alarm');
   });
 });
