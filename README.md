@@ -83,6 +83,7 @@ entities:
 The card is designed around `weather.*` as the primary source.
 
 - `entity: weather.home` provides the current weather state and headline data.
+- The card now also tries to fetch forecast data directly via Home Assistant `weather.get_forecasts`.
 - If your Home Assistant setup does not expose forecast data directly on the `weather.*` entity, use `entities.forecast_entity`.
 - `entities.forecast_entity` should point to a helper or template sensor whose attribute contains a forecast array.
 - `entities.forecast_attribute` defaults to `forecast`.

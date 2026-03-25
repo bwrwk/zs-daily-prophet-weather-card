@@ -496,7 +496,7 @@ function readStringAttribute(entity, keys) {
     }
     return undefined;
 }
-function normalizeForecast(raw) {
+function normalizeForecastData(raw) {
     if (!Array.isArray(raw)) {
         return [];
     }
@@ -510,6 +510,37 @@ function normalizeForecast(raw) {
         wind_speed: Number.isFinite(Number(item?.wind_speed)) ? Number(item.wind_speed) : undefined,
         is_daytime: item?.is_daytime === undefined ? undefined : Boolean(item.is_daytime),
     }));
+}
+function extractForecastResponse(raw, entityId) {
+    if (!raw) {
+        return [];
+    }
+    if (Array.isArray(raw)) {
+        for (const entry of raw) {
+            const extracted = extractForecastResponse(entry, entityId);
+            if (extracted.length) {
+                return extracted;
+            }
+        }
+        return [];
+    }
+    if (typeof raw !== 'object') {
+        return [];
+    }
+    const directEntityForecast = raw?.[entityId]?.forecast;
+    if (Array.isArray(directEntityForecast)) {
+        return normalizeForecastData(directEntityForecast);
+    }
+    if (Array.isArray(raw.forecast)) {
+        return normalizeForecastData(raw.forecast);
+    }
+    for (const value of Object.values(raw)) {
+        const extracted = extractForecastResponse(value, entityId);
+        if (extracted.length) {
+            return extracted;
+        }
+    }
+    return [];
 }
 function deriveAlertSeverity(entity) {
     const raw = String(entity.attributes?.severity
@@ -556,7 +587,7 @@ function createWeatherSnapshot(hass, config) {
     const sunriseEntity = getEntity(hass, overrides.sunrise);
     const sunsetEntity = getEntity(hass, overrides.sunset);
     const alertEntities = (overrides.alerts || []).map((entityId) => getEntity(hass, entityId)).filter(Boolean);
-    const forecastSource = normalizeForecast(forecastEntity?.attributes?.[overrides.forecast_attribute || 'forecast']
+    const forecastSource = normalizeForecastData(forecastEntity?.attributes?.[overrides.forecast_attribute || 'forecast']
         ?? weatherEntity?.attributes?.forecast);
     const lastUpdated = forecastSource[0]?.datetime || weatherEntity?.attributes?.last_updated;
     const lastUpdatedLabel = lastUpdated
@@ -685,6 +716,13 @@ function resolveForecastMode(configuredMode, items) {
     return diff <= 1000 * 60 * 60 * 6 ? 'hourly' : 'daily';
 }
 class ZSDailyProphetCard extends i$2 {
+    constructor() {
+        super(...arguments);
+        this.serviceForecast = [];
+        this.forecastLoading = false;
+        this.lastForecastFetchKey = '';
+        this.forecastRequestToken = 0;
+    }
     static getStubConfig() {
         return {
             type: `custom:${CARD_TAG}`,
@@ -907,6 +945,11 @@ class ZSDailyProphetCard extends i$2 {
         }
         this.config = mergedConfig;
     }
+    updated(changedProperties) {
+        if (changedProperties.has('hass') || changedProperties.has('config')) {
+            void this.refreshForecastIfNeeded();
+        }
+    }
     getCardSize() {
         return 6;
     }
@@ -941,6 +984,10 @@ class ZSDailyProphetCard extends i$2 {
     get selectedFacts() {
         return this.config.layout?.facts?.length ? this.config.layout.facts : ['humidity', 'wind', 'pressure', 'precipitation'];
     }
+    get effectiveForecastMode() {
+        const configured = this.config.layout?.forecast_mode || 'daily';
+        return configured === 'hourly' ? 'hourly' : 'daily';
+    }
     openMoreInfo() {
         if (this.config.tap_action?.action === 'none') {
             return;
@@ -966,6 +1013,89 @@ class ZSDailyProphetCard extends i$2 {
             '--zs-prophet-gap': density.gap,
             '--zs-prophet-hero-padding': density.heroPadding,
         };
+    }
+    async fetchForecastFromService(forecastType) {
+        const callApi = this.hass?.callApi;
+        if (!callApi || !this.config?.entity) {
+            return [];
+        }
+        const attempts = [
+            {
+                path: 'services/weather/get_forecasts?return_response',
+                body: {
+                    target: { entity_id: [this.config.entity] },
+                    data: { type: forecastType },
+                },
+            },
+            {
+                path: 'services/weather/get_forecasts?return_response=true',
+                body: {
+                    target: { entity_id: [this.config.entity] },
+                    data: { type: forecastType },
+                },
+            },
+            {
+                path: 'services/weather/get_forecasts?return_response',
+                body: {
+                    entity_id: this.config.entity,
+                    type: forecastType,
+                },
+            },
+        ];
+        for (const attempt of attempts) {
+            try {
+                const response = await callApi('POST', attempt.path, attempt.body);
+                const forecast = extractForecastResponse(response, this.config.entity);
+                if (forecast.length) {
+                    return forecast;
+                }
+            }
+            catch {
+                continue;
+            }
+        }
+        return [];
+    }
+    async refreshForecastIfNeeded() {
+        if (!this.hass || !this.config) {
+            return;
+        }
+        if (this.config.entities?.forecast_entity) {
+            if (this.serviceForecast.length) {
+                this.serviceForecast = [];
+            }
+            return;
+        }
+        const weatherEntity = this.hass.states?.[this.config.entity];
+        const directForecast = weatherEntity?.attributes?.forecast;
+        if (Array.isArray(directForecast) && directForecast.length) {
+            if (this.serviceForecast.length) {
+                this.serviceForecast = [];
+            }
+            return;
+        }
+        const fetchKey = [
+            this.config.entity,
+            this.effectiveForecastMode,
+            weatherEntity?.state || '',
+            weatherEntity?.attributes?.temperature ?? '',
+            weatherEntity?.last_updated || '',
+        ].join('|');
+        if (fetchKey === this.lastForecastFetchKey) {
+            return;
+        }
+        this.lastForecastFetchKey = fetchKey;
+        const requestToken = ++this.forecastRequestToken;
+        this.forecastLoading = true;
+        const primaryForecast = await this.fetchForecastFromService(this.effectiveForecastMode);
+        const fallbackForecast = !primaryForecast.length && this.effectiveForecastMode === 'daily'
+            ? await this.fetchForecastFromService('hourly')
+            : [];
+        if (requestToken !== this.forecastRequestToken) {
+            return;
+        }
+        this.serviceForecast = primaryForecast.length ? primaryForecast : fallbackForecast;
+        this.forecastLoading = false;
     }
     renderForecastItem(item, mode) {
         const conditionLabel = this.t.conditions[item.condition] || item.condition || '';
@@ -1000,8 +1130,9 @@ class ZSDailyProphetCard extends i$2 {
             : this.config.content?.headline_mode === 'custom' && this.config.content.headline_template
                 ? this.config.content.headline_template
                 : buildHeadline(snapshot, this.language);
-        const forecastItems = snapshot.forecast.slice(0, this.config.layout?.forecast_items || 5);
-        const forecastMode = resolveForecastMode(this.config.layout?.forecast_mode || 'daily', forecastItems);
+        const combinedForecast = snapshot.forecast.length ? snapshot.forecast : this.serviceForecast;
+        const forecastItems = combinedForecast.slice(0, this.config.layout?.forecast_items || 5);
+        const forecastMode = resolveForecastMode(this.config.layout?.forecast_mode || 'daily', combinedForecast);
         const conditionLabel = this.t.conditions[snapshot.condition] || snapshot.condition;
         return b `
       <ha-card style=${o(this.computeCardStyle())} @click=${() => this.openMoreInfo()}>
@@ -1097,6 +1228,8 @@ class ZSDailyProphetCard extends i$2 {
 ZSDailyProphetCard.properties = {
     hass: { attribute: false },
     config: { attribute: false },
+    serviceForecast: { attribute: false, state: true },
+    forecastLoading: { attribute: false, state: true },
 };
 ZSDailyProphetCard.styles = i$5 `
     :host {

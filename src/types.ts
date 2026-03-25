@@ -23,6 +23,7 @@ export type HomeAssistant = {
     language?: string;
   };
   language?: string;
+  callApi?: (method: string, path: string, parameters?: any) => Promise<any>;
 };
 
 export type ForecastItem = {

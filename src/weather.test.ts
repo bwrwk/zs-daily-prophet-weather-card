@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CardConfig, HomeAssistant } from './types';
-import { createWeatherSnapshot } from './weather';
+import { createWeatherSnapshot, extractForecastResponse } from './weather';
 
 describe('createWeatherSnapshot', () => {
   it('uses forecast bridge entity when weather entity has no forecast attribute', () => {
@@ -83,5 +83,27 @@ describe('createWeatherSnapshot', () => {
     expect(snapshot.alerts[0]?.title).toBe('Strong Wind Warning');
     expect(snapshot.alerts[0]?.severity).toBe('warning');
     expect(snapshot.alerts[0]?.description).toContain('parchment');
+  });
+
+  it('extracts service forecast mapping for a weather entity', () => {
+    const response = {
+      service_response: {
+        'weather.openweathermap': {
+          forecast: [
+            {
+              datetime: '2026-03-26T12:00:00+01:00',
+              temperature: 11,
+              condition: 'rainy',
+            },
+          ],
+        },
+      },
+    };
+
+    const forecast = extractForecastResponse(response, 'weather.openweathermap');
+
+    expect(forecast).toHaveLength(1);
+    expect(forecast[0]?.temperature).toBe(11);
+    expect(forecast[0]?.condition).toBe('rainy');
   });
 });

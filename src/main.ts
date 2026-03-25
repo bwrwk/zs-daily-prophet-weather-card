@@ -4,7 +4,7 @@ import { getEditorLanguage, getLanguage, getTranslations } from './i18n';
 import { PRESET_STYLES, getDensityValues } from './presets';
 import { buildFacts, buildHeadline, formatAlertSeverity, formatForecastTemperature, formatTime } from './presenters';
 import type { CardConfig, FactKey, ForecastItem, HomeAssistant } from './types';
-import { createWeatherSnapshot } from './weather';
+import { createWeatherSnapshot, extractForecastResponse } from './weather';
 
 declare global {
   interface Window {
@@ -126,6 +126,8 @@ class ZSDailyProphetCard extends LitElement {
   static properties = {
     hass: { attribute: false },
     config: { attribute: false },
+    serviceForecast: { attribute: false, state: true },
+    forecastLoading: { attribute: false, state: true },
   };
 
   static getStubConfig() {
@@ -742,6 +744,10 @@ class ZSDailyProphetCard extends LitElement {
 
   hass?: HomeAssistant;
   config!: CardConfig;
+  serviceForecast: ForecastItem[] = [];
+  forecastLoading = false;
+  private lastForecastFetchKey = '';
+  private forecastRequestToken = 0;
 
   setConfig(config: CardConfig) {
     const mergedConfig = mergeConfig(config);
@@ -749,6 +755,12 @@ class ZSDailyProphetCard extends LitElement {
       throw new Error('`entity` is required.');
     }
     this.config = mergedConfig;
+  }
+
+  updated(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has('hass') || changedProperties.has('config')) {
+      void this.refreshForecastIfNeeded();
+    }
   }
 
   getCardSize() {
@@ -794,6 +806,11 @@ class ZSDailyProphetCard extends LitElement {
     return this.config.layout?.facts?.length ? this.config.layout.facts : ['humidity', 'wind', 'pressure', 'precipitation'];
   }
 
+  get effectiveForecastMode(): 'hourly' | 'daily' {
+    const configured = this.config.layout?.forecast_mode || 'daily';
+    return configured === 'hourly' ? 'hourly' : 'daily';
+  }
+
   openMoreInfo() {
     if (this.config.tap_action?.action === 'none') {
       return;
@@ -824,6 +841,101 @@ class ZSDailyProphetCard extends LitElement {
       '--zs-prophet-gap': density.gap,
       '--zs-prophet-hero-padding': density.heroPadding,
     };
+  }
+
+  async fetchForecastFromService(forecastType: 'hourly' | 'daily'): Promise<ForecastItem[]> {
+    const callApi = this.hass?.callApi;
+    if (!callApi || !this.config?.entity) {
+      return [];
+    }
+
+    const attempts = [
+      {
+        path: 'services/weather/get_forecasts?return_response',
+        body: {
+          target: { entity_id: [this.config.entity] },
+          data: { type: forecastType },
+        },
+      },
+      {
+        path: 'services/weather/get_forecasts?return_response=true',
+        body: {
+          target: { entity_id: [this.config.entity] },
+          data: { type: forecastType },
+        },
+      },
+      {
+        path: 'services/weather/get_forecasts?return_response',
+        body: {
+          entity_id: this.config.entity,
+          type: forecastType,
+        },
+      },
+    ];
+
+    for (const attempt of attempts) {
+      try {
+        const response = await callApi('POST', attempt.path, attempt.body);
+        const forecast = extractForecastResponse(response, this.config.entity);
+        if (forecast.length) {
+          return forecast;
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    return [];
+  }
+
+  async refreshForecastIfNeeded() {
+    if (!this.hass || !this.config) {
+      return;
+    }
+
+    if (this.config.entities?.forecast_entity) {
+      if (this.serviceForecast.length) {
+        this.serviceForecast = [];
+      }
+      return;
+    }
+
+    const weatherEntity = this.hass.states?.[this.config.entity] as any;
+    const directForecast = weatherEntity?.attributes?.forecast;
+    if (Array.isArray(directForecast) && directForecast.length) {
+      if (this.serviceForecast.length) {
+        this.serviceForecast = [];
+      }
+      return;
+    }
+
+    const fetchKey = [
+      this.config.entity,
+      this.effectiveForecastMode,
+      weatherEntity?.state || '',
+      weatherEntity?.attributes?.temperature ?? '',
+      weatherEntity?.last_updated || '',
+    ].join('|');
+
+    if (fetchKey === this.lastForecastFetchKey) {
+      return;
+    }
+
+    this.lastForecastFetchKey = fetchKey;
+    const requestToken = ++this.forecastRequestToken;
+    this.forecastLoading = true;
+
+    const primaryForecast = await this.fetchForecastFromService(this.effectiveForecastMode);
+    const fallbackForecast = !primaryForecast.length && this.effectiveForecastMode === 'daily'
+      ? await this.fetchForecastFromService('hourly')
+      : [];
+
+    if (requestToken !== this.forecastRequestToken) {
+      return;
+    }
+
+    this.serviceForecast = primaryForecast.length ? primaryForecast : fallbackForecast;
+    this.forecastLoading = false;
   }
 
   renderForecastItem(item: ForecastItem, mode: 'hourly' | 'daily') {
@@ -862,8 +974,9 @@ class ZSDailyProphetCard extends LitElement {
       : this.config.content?.headline_mode === 'custom' && this.config.content.headline_template
         ? this.config.content.headline_template
         : buildHeadline(snapshot, this.language);
-    const forecastItems = snapshot.forecast.slice(0, this.config.layout?.forecast_items || 5);
-    const forecastMode = resolveForecastMode(this.config.layout?.forecast_mode || 'daily', forecastItems);
+    const combinedForecast = snapshot.forecast.length ? snapshot.forecast : this.serviceForecast;
+    const forecastItems = combinedForecast.slice(0, this.config.layout?.forecast_items || 5);
+    const forecastMode = resolveForecastMode(this.config.layout?.forecast_mode || 'daily', combinedForecast);
     const conditionLabel = this.t.conditions[snapshot.condition as keyof typeof this.t.conditions] || snapshot.condition;
 
     return html`

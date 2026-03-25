@@ -39,7 +39,7 @@ function readStringAttribute(entity: HassEntity | undefined, keys: string[]): st
   return undefined;
 }
 
-function normalizeForecast(raw: any): ForecastItem[] {
+export function normalizeForecastData(raw: any): ForecastItem[] {
   if (!Array.isArray(raw)) {
     return [];
   }
@@ -54,6 +54,44 @@ function normalizeForecast(raw: any): ForecastItem[] {
     wind_speed: Number.isFinite(Number(item?.wind_speed)) ? Number(item.wind_speed) : undefined,
     is_daytime: item?.is_daytime === undefined ? undefined : Boolean(item.is_daytime),
   }));
+}
+
+export function extractForecastResponse(raw: any, entityId: string): ForecastItem[] {
+  if (!raw) {
+    return [];
+  }
+
+  if (Array.isArray(raw)) {
+    for (const entry of raw) {
+      const extracted = extractForecastResponse(entry, entityId);
+      if (extracted.length) {
+        return extracted;
+      }
+    }
+    return [];
+  }
+
+  if (typeof raw !== 'object') {
+    return [];
+  }
+
+  const directEntityForecast = raw?.[entityId]?.forecast;
+  if (Array.isArray(directEntityForecast)) {
+    return normalizeForecastData(directEntityForecast);
+  }
+
+  if (Array.isArray(raw.forecast)) {
+    return normalizeForecastData(raw.forecast);
+  }
+
+  for (const value of Object.values(raw)) {
+    const extracted = extractForecastResponse(value, entityId);
+    if (extracted.length) {
+      return extracted;
+    }
+  }
+
+  return [];
 }
 
 function deriveAlertSeverity(entity: HassEntity): WeatherAlert['severity'] {
@@ -114,7 +152,7 @@ export function createWeatherSnapshot(hass: HomeAssistant, config: CardConfig): 
   const sunsetEntity = getEntity(hass, overrides.sunset);
   const alertEntities = (overrides.alerts || []).map((entityId) => getEntity(hass, entityId)).filter(Boolean) as HassEntity[];
 
-  const forecastSource = normalizeForecast(
+  const forecastSource = normalizeForecastData(
     forecastEntity?.attributes?.[overrides.forecast_attribute || 'forecast']
       ?? weatherEntity?.attributes?.forecast,
   );
