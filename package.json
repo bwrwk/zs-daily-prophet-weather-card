@@ -1,5 +1,5 @@
 {
-  "name": "zs-daily-prophet-card",
+  "name": "zs-daily-prophet-weather-card",
   "version": "0.1.0",
   "description": "Daily Prophet inspired weather card for Home Assistant Lovelace",
   "type": "module",
@@ -32,4 +32,3 @@
     "test": "vitest run"
   }
 }
-
