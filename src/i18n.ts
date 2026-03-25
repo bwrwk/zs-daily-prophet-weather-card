@@ -1,0 +1,88 @@
+const TRANSLATIONS = {
+  en: {
+    eyebrow: 'Daily Prophet Weather Bureau',
+    defaultTitle: 'Daily Prophet',
+    updated: 'Updated',
+    feelsLike: 'Feels like',
+    specialEdition: 'Special Edition',
+    forecastTitle: 'Forecast',
+    almanacTitle: 'Almanac',
+    noForecast: 'Forecast quills are quiet today.',
+    facts: {
+      humidity: 'Humidity',
+      wind: 'Wind',
+      pressure: 'Pressure',
+      precipitation: 'Precipitation',
+      visibility: 'Visibility',
+      uv: 'UV',
+      cloud_coverage: 'Clouds',
+      sunrise: 'Sunrise',
+      sunset: 'Sunset',
+    },
+    conditions: {
+      clear_night: 'clear night',
+      cloudy: 'cloudy',
+      exceptional: 'exceptional',
+      fog: 'fog',
+      hail: 'hail',
+      lightning: 'lightning',
+      lightning_rainy: 'stormy rain',
+      partlycloudy: 'partly cloudy',
+      pouring: 'pouring rain',
+      rainy: 'rain',
+      snowy: 'snow',
+      snowy_rainy: 'sleet',
+      sunny: 'sunny',
+      windy: 'windy',
+      windy_variant: 'gusty',
+    },
+  },
+  pl: {
+    eyebrow: 'Biuro Pogodowe Proroka Codziennego',
+    defaultTitle: 'Prorok Codzienny',
+    updated: 'Aktualizacja',
+    feelsLike: 'Odczuwalna',
+    specialEdition: 'Wydanie Specjalne',
+    forecastTitle: 'Prognoza',
+    almanacTitle: 'Almanach',
+    noForecast: 'Dziś sowy nie przyniosły prognozy.',
+    facts: {
+      humidity: 'Wilgotność',
+      wind: 'Wiatr',
+      pressure: 'Ciśnienie',
+      precipitation: 'Opady',
+      visibility: 'Widoczność',
+      uv: 'UV',
+      cloud_coverage: 'Zachmurzenie',
+      sunrise: 'Wschód',
+      sunset: 'Zachód',
+    },
+    conditions: {
+      clear_night: 'bezchmurna noc',
+      cloudy: 'pochmurno',
+      exceptional: 'wyjątkowo',
+      fog: 'mgła',
+      hail: 'grad',
+      lightning: 'burza',
+      lightning_rainy: 'burza z deszczem',
+      partlycloudy: 'częściowe zachmurzenie',
+      pouring: 'ulewa',
+      rainy: 'deszcz',
+      snowy: 'śnieg',
+      snowy_rainy: 'deszcz ze śniegiem',
+      sunny: 'słonecznie',
+      windy: 'wietrznie',
+      windy_variant: 'porywiście',
+    },
+  },
+} as const;
+
+export function getLanguage(hass?: { language?: string; locale?: { language?: string }; config?: { language?: string } }): 'pl' | 'en' {
+  const raw = String(hass?.language || hass?.locale?.language || hass?.config?.language || 'en').toLowerCase();
+  return raw.startsWith('pl') ? 'pl' : 'en';
+}
+
+export function getTranslations(language: 'pl' | 'en') {
+  return TRANSLATIONS[language] || TRANSLATIONS.en;
+}
+
