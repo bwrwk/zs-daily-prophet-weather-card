@@ -1,6 +1,6 @@
 import { LitElement, css, html } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
-import { getLanguage, getTranslations } from './i18n';
+import { getEditorLanguage, getLanguage, getTranslations } from './i18n';
 import { PRESET_STYLES, getDensityValues } from './presets';
 import { buildFacts, buildHeadline, formatAlertSeverity, formatForecastTemperature, formatTime } from './presenters';
 import type { CardConfig, FactKey, ForecastItem, HomeAssistant } from './types';
@@ -62,25 +62,25 @@ function mergeConfig(config: CardConfig): CardConfig {
 function getConditionIcon(condition: string): string {
   switch (condition) {
     case 'sunny':
-      return '☼';
+      return '\u263c';
     case 'partlycloudy':
-      return '⛅';
+      return '\u26c5';
     case 'rainy':
     case 'pouring':
-      return '☔';
+      return '\u2614';
     case 'lightning':
     case 'lightning_rainy':
-      return '☇';
+      return '\u2607';
     case 'snowy':
     case 'snowy_rainy':
-      return '❄';
+      return '\u2744';
     case 'fog':
-      return '〰';
+      return '\u3030';
     case 'windy':
     case 'windy_variant':
-      return '🜁';
+      return '\ud83c\udf01';
     default:
-      return '☁';
+      return '\u2601';
   }
 }
 
@@ -138,6 +138,211 @@ class ZSDailyProphetCard extends LitElement {
       style: {
         preset: 'classic_prophet',
       },
+    };
+  }
+
+  static getConfigForm() {
+    const t = getTranslations(getEditorLanguage());
+
+    return {
+      schema: [
+        {
+          name: 'entity',
+          required: true,
+          selector: {
+            entity: {
+              filter: [{ domain: 'weather' }],
+            },
+          },
+        },
+        { name: 'title', selector: { text: {} } },
+        { name: 'subtitle', selector: { text: {} } },
+        { name: 'location', selector: { text: {} } },
+        {
+          type: 'expandable',
+          name: 'style',
+          title: t.labels.style,
+          schema: [
+            {
+              name: 'preset',
+              selector: {
+                select: {
+                  options: [
+                    { value: 'classic_prophet', label: 'Classic Prophet' },
+                    { value: 'weather_bureau', label: 'Weather Bureau' },
+                    { value: 'animated_frontpage', label: 'Animated Front Page' },
+                  ],
+                },
+              },
+            },
+            { name: 'ha_theme', selector: { theme: {} } },
+            { name: 'accent_color', selector: { text: {} } },
+            { name: 'ink_color', selector: { text: {} } },
+            { name: 'paper_color', selector: { text: {} } },
+            { name: 'background', selector: { text: {} } },
+            {
+              name: 'density',
+              selector: {
+                select: {
+                  options: [
+                    { value: 'compact', label: 'Compact' },
+                    { value: 'comfortable', label: 'Comfortable' },
+                    { value: 'airy', label: 'Airy' },
+                  ],
+                },
+              },
+            },
+            { name: 'paper_texture', selector: { boolean: {} } },
+            { name: 'animated_hero', selector: { boolean: {} } },
+            { name: 'show_masthead', selector: { boolean: {} } },
+            { name: 'show_almanac', selector: { boolean: {} } },
+            { name: 'show_forecast', selector: { boolean: {} } },
+            { name: 'show_alerts', selector: { boolean: {} } },
+          ],
+        },
+        {
+          type: 'expandable',
+          name: 'layout',
+          title: t.labels.layout,
+          schema: [
+            {
+              name: 'mode',
+              selector: {
+                select: {
+                  options: [
+                    { value: 'frontpage', label: 'Frontpage' },
+                    { value: 'bulletin', label: 'Bulletin' },
+                  ],
+                },
+              },
+            },
+            {
+              name: 'forecast_mode',
+              selector: {
+                select: {
+                  options: [
+                    { value: 'auto', label: 'Auto' },
+                    { value: 'hourly', label: 'Hourly' },
+                    { value: 'daily', label: 'Daily' },
+                  ],
+                },
+              },
+            },
+            {
+              name: 'forecast_items',
+              selector: {
+                number: {
+                  min: 1,
+                  max: 12,
+                  step: 1,
+                  mode: 'slider',
+                },
+              },
+            },
+            {
+              name: 'facts',
+              selector: {
+                select: {
+                  multiple: true,
+                  mode: 'list',
+                  options: [
+                    { value: 'humidity', label: t.facts.humidity },
+                    { value: 'wind', label: t.facts.wind },
+                    { value: 'pressure', label: t.facts.pressure },
+                    { value: 'precipitation', label: t.facts.precipitation },
+                    { value: 'visibility', label: t.facts.visibility },
+                    { value: 'uv', label: t.facts.uv },
+                    { value: 'cloud_coverage', label: t.facts.cloud_coverage },
+                    { value: 'sunrise', label: t.facts.sunrise },
+                    { value: 'sunset', label: t.facts.sunset },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+        {
+          type: 'expandable',
+          name: 'content',
+          title: t.labels.content,
+          schema: [
+            {
+              name: 'headline_mode',
+              selector: {
+                select: {
+                  options: [
+                    { value: 'auto', label: 'Auto' },
+                    { value: 'custom', label: 'Custom' },
+                    { value: 'none', label: 'None' },
+                  ],
+                },
+              },
+            },
+            { name: 'headline_template', selector: { text: {} } },
+            {
+              name: 'condition_labels',
+              selector: {
+                select: {
+                  options: [
+                    { value: 'auto', label: 'Auto' },
+                    { value: 'pl', label: 'Polish' },
+                    { value: 'en', label: 'English' },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+        {
+          type: 'expandable',
+          name: 'entities',
+          title: t.labels.entities,
+          schema: [
+            { name: 'forecast_entity', selector: { entity: {} } },
+            { name: 'forecast_attribute', selector: { text: {} } },
+            { name: 'apparent_temperature', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+            { name: 'humidity', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+            { name: 'pressure', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+            { name: 'wind_speed', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+            { name: 'wind_bearing', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+            { name: 'visibility', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+            { name: 'uv_index', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+            { name: 'cloud_coverage', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+            { name: 'precipitation', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+            { name: 'sunrise', selector: { entity: {} } },
+            { name: 'sunset', selector: { entity: {} } },
+            {
+              name: 'alerts',
+              selector: {
+                entity: {
+                  multiple: true,
+                  filter: [{ domain: 'binary_sensor' }, { domain: 'sensor' }],
+                },
+              },
+            },
+          ],
+        },
+        {
+          type: 'expandable',
+          name: 'tap_action',
+          title: t.labels.tap_action,
+          schema: [
+            {
+              name: 'action',
+              selector: {
+                select: {
+                  options: [
+                    { value: 'more-info', label: 'More info' },
+                    { value: 'none', label: 'None' },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
+      computeLabel: (schema: { name: string }) => t.labels[schema.name] || schema.name,
+      computeHelper: (schema: { name: string }) => t.helpers[schema.name],
     };
   }
 
@@ -576,6 +781,15 @@ class ZSDailyProphetCard extends LitElement {
     return PRESET_STYLES[this.config.style?.preset || 'classic_prophet'] || PRESET_STYLES.classic_prophet;
   }
 
+  get selectedThemeVariables(): Record<string, string> {
+    const themeName = this.config.style?.ha_theme;
+    if (!themeName) {
+      return {};
+    }
+
+    return { ...(this.hass?.themes?.themes?.[themeName] || {}) };
+  }
+
   get selectedFacts(): FactKey[] {
     return this.config.layout?.facts?.length ? this.config.layout.facts : ['humidity', 'wind', 'pressure', 'precipitation'];
   }
@@ -596,6 +810,7 @@ class ZSDailyProphetCard extends LitElement {
     const density = getDensityValues(this.config.style?.density);
 
     return {
+      ...this.selectedThemeVariables,
       '--zs-prophet-card-bg': this.config.style?.background || this.preset.cardBackground,
       '--zs-prophet-paper': this.config.style?.paper_color || this.preset.paper,
       '--zs-prophet-ink': this.config.style?.ink_color || this.preset.ink,

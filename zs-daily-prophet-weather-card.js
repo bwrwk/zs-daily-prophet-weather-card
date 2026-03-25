@@ -56,6 +56,92 @@ const TRANSLATIONS = {
             warning: 'Warning',
             critical: 'Emergency',
         },
+        labels: {
+            entity: 'Weather entity',
+            title: 'Title',
+            subtitle: 'Subtitle',
+            location: 'Location',
+            style: 'Style',
+            preset: 'Preset',
+            ha_theme: 'Home Assistant theme',
+            accent_color: 'Accent color',
+            ink_color: 'Ink color',
+            paper_color: 'Paper color',
+            background: 'Background',
+            density: 'Density',
+            paper_texture: 'Paper texture',
+            animated_hero: 'Animated hero',
+            show_masthead: 'Show masthead',
+            show_almanac: 'Show almanac',
+            show_forecast: 'Show forecast',
+            show_alerts: 'Show alerts',
+            layout: 'Layout',
+            mode: 'Layout mode',
+            forecast_mode: 'Forecast mode',
+            forecast_items: 'Forecast items',
+            facts: 'Fact tiles',
+            content: 'Content',
+            headline_mode: 'Headline mode',
+            headline_template: 'Custom headline',
+            condition_labels: 'Condition language',
+            entities: 'Data overrides',
+            forecast_entity: 'Forecast bridge entity',
+            forecast_attribute: 'Forecast attribute',
+            apparent_temperature: 'Feels-like sensor',
+            humidity: 'Humidity sensor',
+            pressure: 'Pressure sensor',
+            wind_speed: 'Wind speed sensor',
+            wind_bearing: 'Wind bearing sensor',
+            visibility: 'Visibility sensor',
+            uv_index: 'UV index sensor',
+            cloud_coverage: 'Cloud coverage sensor',
+            precipitation: 'Precipitation sensor',
+            sunrise: 'Sunrise entity',
+            sunset: 'Sunset entity',
+            alerts: 'Alert entities',
+            tap_action: 'Tap action',
+            action: 'Action',
+        },
+        helpers: {
+            entity: 'Primary weather.* entity used for current conditions and default forecast lookup.',
+            location: 'Optional editorial location shown in the issue header.',
+            preset: 'Classic is the most polished preset right now.',
+            ha_theme: 'Optional Home Assistant theme for this card.',
+            accent_color: 'Custom accent used for borders and seals.',
+            ink_color: 'Overrides the main newspaper ink color.',
+            paper_color: 'Overrides the inner paper surface color.',
+            background: 'Overrides the outer card background.',
+            density: 'Controls spacing inside the card.',
+            paper_texture: 'Adds subtle print grain over the paper surface.',
+            animated_hero: 'Enables the gentle moving front-page hero treatment.',
+            show_masthead: 'Shows the newspaper title block.',
+            show_almanac: 'Shows sunrise and sunset blocks.',
+            show_forecast: 'Shows the forecast strip.',
+            show_alerts: 'Shows the special-edition alert section.',
+            mode: 'Frontpage is editorial. Bulletin is for a cleaner report layout.',
+            forecast_mode: 'Auto detects whether the forecast is hourly or daily.',
+            forecast_items: 'How many forecast entries to render.',
+            facts: 'Choose which fact tiles appear in the lead panel.',
+            headline_mode: 'Auto generates copy from weather. Custom uses the field below.',
+            headline_template: 'Used only when headline mode is custom.',
+            condition_labels: 'Controls the language used for condition names.',
+            forecast_entity: 'Optional helper or template entity that exposes forecast data.',
+            forecast_attribute: 'Attribute name on the forecast bridge entity. Defaults to forecast.',
+            apparent_temperature: 'Optional sensor override for apparent temperature.',
+            humidity: 'Optional sensor override for humidity.',
+            pressure: 'Optional sensor override for pressure.',
+            wind_speed: 'Optional sensor override for wind speed.',
+            wind_bearing: 'Optional sensor override for wind bearing.',
+            visibility: 'Optional sensor override for visibility.',
+            uv_index: 'Optional sensor override for UV index.',
+            cloud_coverage: 'Optional sensor override for cloud coverage.',
+            precipitation: 'Optional sensor override for precipitation.',
+            sunrise: 'Optional entity or sensor for sunrise time.',
+            sunset: 'Optional entity or sensor for sunset time.',
+            alerts: 'Optional warning entities, usually binary_sensors or sensors.',
+            tap_action: 'What should happen when the card is clicked.',
+            action: 'More-info opens the Home Assistant dialog for the main weather entity.',
+        },
         facts: {
             humidity: 'Humidity',
             wind: 'Wind',
@@ -93,49 +179,142 @@ const TRANSLATIONS = {
         specialEdition: 'Wydanie Specjalne',
         forecastTitle: 'Prognoza',
         almanacTitle: 'Almanach',
-        noForecast: 'Dziś sowy nie przyniosły prognozy.',
-        chanceOfRain: 'Szansa opadów',
+        noForecast: 'Dzis sowy nie przyniosly prognozy.',
+        chanceOfRain: 'Szansa opadow',
         low: 'Min',
         high: 'Max',
         windShort: 'Wiatr',
         alertLevels: {
             info: 'Komunikat',
-            warning: 'Ostrzeżenie',
+            warning: 'Ostrzezenie',
             critical: 'Alarm',
         },
+        labels: {
+            entity: 'Encja pogody',
+            title: 'Tytul',
+            subtitle: 'Podtytul',
+            location: 'Lokalizacja',
+            style: 'Styl',
+            preset: 'Preset',
+            ha_theme: 'Motyw Home Assistanta',
+            accent_color: 'Kolor akcentu',
+            ink_color: 'Kolor atramentu',
+            paper_color: 'Kolor papieru',
+            background: 'Tlo',
+            density: 'Gestosc',
+            paper_texture: 'Faktura papieru',
+            animated_hero: 'Animowany hero',
+            show_masthead: 'Pokaz naglowek',
+            show_almanac: 'Pokaz almanach',
+            show_forecast: 'Pokaz prognoze',
+            show_alerts: 'Pokaz alerty',
+            layout: 'Uklad',
+            mode: 'Tryb ukladu',
+            forecast_mode: 'Tryb prognozy',
+            forecast_items: 'Liczba pozycji prognozy',
+            facts: 'Kafelki faktow',
+            content: 'Tresc',
+            headline_mode: 'Tryb naglowka',
+            headline_template: 'Wlasny naglowek',
+            condition_labels: 'Jezyk warunkow',
+            entities: 'Nadpisania danych',
+            forecast_entity: 'Encja mostka prognozy',
+            forecast_attribute: 'Atrybut prognozy',
+            apparent_temperature: 'Sensor odczuwalnej',
+            humidity: 'Sensor wilgotnosci',
+            pressure: 'Sensor cisnienia',
+            wind_speed: 'Sensor predkosci wiatru',
+            wind_bearing: 'Sensor kierunku wiatru',
+            visibility: 'Sensor widocznosci',
+            uv_index: 'Sensor UV',
+            cloud_coverage: 'Sensor zachmurzenia',
+            precipitation: 'Sensor opadow',
+            sunrise: 'Encja wschodu',
+            sunset: 'Encja zachodu',
+            alerts: 'Encje alertow',
+            tap_action: 'Akcja klikniecia',
+            action: 'Akcja',
+        },
+        helpers: {
+            entity: 'Glowna encja weather.* dla biezacych warunkow i domyslnego odczytu prognozy.',
+            location: 'Opcjonalna nazwa miejsca pokazywana w naglowku wydania.',
+            preset: 'Classic jest obecnie najbardziej dopracowany.',
+            ha_theme: 'Opcjonalny motyw Home Assistanta dla tej karty.',
+            accent_color: 'Wlasny kolor akcentow dla ramek i detali.',
+            ink_color: 'Nadpisuje glowny kolor atramentu.',
+            paper_color: 'Nadpisuje kolor papieru wewnatrz karty.',
+            background: 'Nadpisuje zewnetrzne tlo karty.',
+            density: 'Steruje odstepami wewnatrz karty.',
+            paper_texture: 'Dodaje subtelna fakture druku.',
+            animated_hero: 'Wlacza delikatna animacje front page hero.',
+            show_masthead: 'Pokazuje gazetowy blok tytulowy.',
+            show_almanac: 'Pokazuje bloki wschodu i zachodu slonca.',
+            show_forecast: 'Pokazuje pasek prognozy.',
+            show_alerts: 'Pokazuje sekcje wydania specjalnego dla ostrzezen.',
+            mode: 'Frontpage jest bardziej redakcyjny. Bulletin jest bardziej raportowy.',
+            forecast_mode: 'Auto wykrywa, czy prognoza jest godzinowa czy dzienna.',
+            forecast_items: 'Ile pozycji prognozy pokazac.',
+            facts: 'Wybierz, ktore kafelki faktow maja byc pokazane.',
+            headline_mode: 'Auto generuje tekst z pogody. Custom uzywa pola ponizej.',
+            headline_template: 'Uzywane tylko przy headline mode ustawionym na custom.',
+            condition_labels: 'Steruje jezykiem nazw warunkow pogodowych.',
+            forecast_entity: 'Opcjonalna encja pomocnicza lub template z danymi prognozy.',
+            forecast_attribute: 'Nazwa atrybutu na encji mostka. Domyslnie forecast.',
+            apparent_temperature: 'Opcjonalny sensor odczuwalnej temperatury.',
+            humidity: 'Opcjonalny sensor wilgotnosci.',
+            pressure: 'Opcjonalny sensor cisnienia.',
+            wind_speed: 'Opcjonalny sensor predkosci wiatru.',
+            wind_bearing: 'Opcjonalny sensor kierunku wiatru.',
+            visibility: 'Opcjonalny sensor widocznosci.',
+            uv_index: 'Opcjonalny sensor UV.',
+            cloud_coverage: 'Opcjonalny sensor zachmurzenia.',
+            precipitation: 'Opcjonalny sensor opadow.',
+            sunrise: 'Opcjonalna encja lub sensor wschodu slonca.',
+            sunset: 'Opcjonalna encja lub sensor zachodu slonca.',
+            alerts: 'Opcjonalne encje ostrzezen, zwykle binary_sensor lub sensor.',
+            tap_action: 'Co ma sie stac po kliknieciu w karte.',
+            action: 'More-info otwiera okno Home Assistanta dla glownej encji pogody.',
+        },
         facts: {
-            humidity: 'Wilgotność',
+            humidity: 'Wilgotnosc',
             wind: 'Wiatr',
-            pressure: 'Ciśnienie',
+            pressure: 'Cisnienie',
             precipitation: 'Opady',
-            visibility: 'Widoczność',
+            visibility: 'Widocznosc',
             uv: 'UV',
             cloud_coverage: 'Zachmurzenie',
-            sunrise: 'Wschód',
-            sunset: 'Zachód',
+            sunrise: 'Wschod',
+            sunset: 'Zachod',
         },
         conditions: {
             clear_night: 'bezchmurna noc',
             cloudy: 'pochmurno',
-            exceptional: 'wyjątkowo',
-            fog: 'mgła',
+            exceptional: 'wyjatkowo',
+            fog: 'mgla',
             hail: 'grad',
             lightning: 'burza',
             lightning_rainy: 'burza z deszczem',
-            partlycloudy: 'częściowe zachmurzenie',
+            partlycloudy: 'czesciowe zachmurzenie',
             pouring: 'ulewa',
             rainy: 'deszcz',
-            snowy: 'śnieg',
-            snowy_rainy: 'deszcz ze śniegiem',
-            sunny: 'słonecznie',
+            snowy: 'snieg',
+            snowy_rainy: 'deszcz ze sniegiem',
+            sunny: 'slonecznie',
             windy: 'wietrznie',
-            windy_variant: 'porywiście',
+            windy_variant: 'porywiscie',
         },
     },
 };
 function getLanguage(hass) {
     const raw = String(hass?.language || hass?.locale?.language || hass?.config?.language || 'en').toLowerCase();
     return raw.startsWith('pl') ? 'pl' : 'en';
+}
+function getEditorLanguage() {
+    const documentLanguage = typeof document !== 'undefined' ? document.documentElement?.lang : '';
+    const browserLanguage = typeof navigator !== 'undefined' ? navigator.language : 'en';
+    return getLanguage({
+        language: documentLanguage || browserLanguage,
+    });
 }
 function getTranslations(language) {
     return TRANSLATIONS[language] || TRANSLATIONS.en;
@@ -454,25 +633,25 @@ function mergeConfig(config) {
 function getConditionIcon(condition) {
     switch (condition) {
         case 'sunny':
-            return '☼';
+            return '\u263c';
         case 'partlycloudy':
-            return '⛅';
+            return '\u26c5';
         case 'rainy':
         case 'pouring':
-            return '☔';
+            return '\u2614';
         case 'lightning':
         case 'lightning_rainy':
-            return '☇';
+            return '\u2607';
         case 'snowy':
         case 'snowy_rainy':
-            return '❄';
+            return '\u2744';
         case 'fog':
-            return '〰';
+            return '\u3030';
         case 'windy':
         case 'windy_variant':
-            return '🜁';
+            return '\ud83c\udf01';
         default:
-            return '☁';
+            return '\u2601';
     }
 }
 function formatForecastLabel(item, mode) {
@@ -518,6 +697,209 @@ class ZSDailyProphetCard extends i$2 {
             },
         };
     }
+    static getConfigForm() {
+        const t = getTranslations(getEditorLanguage());
+        return {
+            schema: [
+                {
+                    name: 'entity',
+                    required: true,
+                    selector: {
+                        entity: {
+                            filter: [{ domain: 'weather' }],
+                        },
+                    },
+                },
+                { name: 'title', selector: { text: {} } },
+                { name: 'subtitle', selector: { text: {} } },
+                { name: 'location', selector: { text: {} } },
+                {
+                    type: 'expandable',
+                    name: 'style',
+                    title: t.labels.style,
+                    schema: [
+                        {
+                            name: 'preset',
+                            selector: {
+                                select: {
+                                    options: [
+                                        { value: 'classic_prophet', label: 'Classic Prophet' },
+                                        { value: 'weather_bureau', label: 'Weather Bureau' },
+                                        { value: 'animated_frontpage', label: 'Animated Front Page' },
+                                    ],
+                                },
+                            },
+                        },
+                        { name: 'ha_theme', selector: { theme: {} } },
+                        { name: 'accent_color', selector: { text: {} } },
+                        { name: 'ink_color', selector: { text: {} } },
+                        { name: 'paper_color', selector: { text: {} } },
+                        { name: 'background', selector: { text: {} } },
+                        {
+                            name: 'density',
+                            selector: {
+                                select: {
+                                    options: [
+                                        { value: 'compact', label: 'Compact' },
+                                        { value: 'comfortable', label: 'Comfortable' },
+                                        { value: 'airy', label: 'Airy' },
+                                    ],
+                                },
+                            },
+                        },
+                        { name: 'paper_texture', selector: { boolean: {} } },
+                        { name: 'animated_hero', selector: { boolean: {} } },
+                        { name: 'show_masthead', selector: { boolean: {} } },
+                        { name: 'show_almanac', selector: { boolean: {} } },
+                        { name: 'show_forecast', selector: { boolean: {} } },
+                        { name: 'show_alerts', selector: { boolean: {} } },
+                    ],
+                },
+                {
+                    type: 'expandable',
+                    name: 'layout',
+                    title: t.labels.layout,
+                    schema: [
+                        {
+                            name: 'mode',
+                            selector: {
+                                select: {
+                                    options: [
+                                        { value: 'frontpage', label: 'Frontpage' },
+                                        { value: 'bulletin', label: 'Bulletin' },
+                                    ],
+                                },
+                            },
+                        },
+                        {
+                            name: 'forecast_mode',
+                            selector: {
+                                select: {
+                                    options: [
+                                        { value: 'auto', label: 'Auto' },
+                                        { value: 'hourly', label: 'Hourly' },
+                                        { value: 'daily', label: 'Daily' },
+                                    ],
+                                },
+                            },
+                        },
+                        {
+                            name: 'forecast_items',
+                            selector: {
+                                number: {
+                                    min: 1,
+                                    max: 12,
+                                    step: 1,
+                                    mode: 'slider',
+                                },
+                            },
+                        },
+                        {
+                            name: 'facts',
+                            selector: {
+                                select: {
+                                    multiple: true,
+                                    mode: 'list',
+                                    options: [
+                                        { value: 'humidity', label: t.facts.humidity },
+                                        { value: 'wind', label: t.facts.wind },
+                                        { value: 'pressure', label: t.facts.pressure },
+                                        { value: 'precipitation', label: t.facts.precipitation },
+                                        { value: 'visibility', label: t.facts.visibility },
+                                        { value: 'uv', label: t.facts.uv },
+                                        { value: 'cloud_coverage', label: t.facts.cloud_coverage },
+                                        { value: 'sunrise', label: t.facts.sunrise },
+                                        { value: 'sunset', label: t.facts.sunset },
+                                    ],
+                                },
+                            },
+                        },
+                    ],
+                },
+                {
+                    type: 'expandable',
+                    name: 'content',
+                    title: t.labels.content,
+                    schema: [
+                        {
+                            name: 'headline_mode',
+                            selector: {
+                                select: {
+                                    options: [
+                                        { value: 'auto', label: 'Auto' },
+                                        { value: 'custom', label: 'Custom' },
+                                        { value: 'none', label: 'None' },
+                                    ],
+                                },
+                            },
+                        },
+                        { name: 'headline_template', selector: { text: {} } },
+                        {
+                            name: 'condition_labels',
+                            selector: {
+                                select: {
+                                    options: [
+                                        { value: 'auto', label: 'Auto' },
+                                        { value: 'pl', label: 'Polish' },
+                                        { value: 'en', label: 'English' },
+                                    ],
+                                },
+                            },
+                        },
+                    ],
+                },
+                {
+                    type: 'expandable',
+                    name: 'entities',
+                    title: t.labels.entities,
+                    schema: [
+                        { name: 'forecast_entity', selector: { entity: {} } },
+                        { name: 'forecast_attribute', selector: { text: {} } },
+                        { name: 'apparent_temperature', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+                        { name: 'humidity', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+                        { name: 'pressure', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+                        { name: 'wind_speed', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+                        { name: 'wind_bearing', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+                        { name: 'visibility', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+                        { name: 'uv_index', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+                        { name: 'cloud_coverage', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+                        { name: 'precipitation', selector: { entity: { filter: [{ domain: 'sensor' }] } } },
+                        { name: 'sunrise', selector: { entity: {} } },
+                        { name: 'sunset', selector: { entity: {} } },
+                        {
+                            name: 'alerts',
+                            selector: {
+                                entity: {
+                                    multiple: true,
+                                    filter: [{ domain: 'binary_sensor' }, { domain: 'sensor' }],
+                                },
+                            },
+                        },
+                    ],
+                },
+                {
+                    type: 'expandable',
+                    name: 'tap_action',
+                    title: t.labels.tap_action,
+                    schema: [
+                        {
+                            name: 'action',
+                            selector: {
+                                select: {
+                                    options: [
+                                        { value: 'more-info', label: 'More info' },
+                                        { value: 'none', label: 'None' },
+                                    ],
+                                },
+                            },
+                        },
+                    ],
+                },
+            ],
+            computeLabel: (schema) => t.labels[schema.name] || schema.name,
+            computeHelper: (schema) => t.helpers[schema.name],
+        };
+    }
     setConfig(config) {
         const mergedConfig = mergeConfig(config);
         if (!mergedConfig.entity?.trim()) {
@@ -549,6 +931,13 @@ class ZSDailyProphetCard extends i$2 {
     get preset() {
         return PRESET_STYLES[this.config.style?.preset || 'classic_prophet'] || PRESET_STYLES.classic_prophet;
     }
+    get selectedThemeVariables() {
+        const themeName = this.config.style?.ha_theme;
+        if (!themeName) {
+            return {};
+        }
+        return { ...(this.hass?.themes?.themes?.[themeName] || {}) };
+    }
     get selectedFacts() {
         return this.config.layout?.facts?.length ? this.config.layout.facts : ['humidity', 'wind', 'pressure', 'precipitation'];
     }
@@ -563,6 +952,7 @@ class ZSDailyProphetCard extends i$2 {
     computeCardStyle() {
         const density = getDensityValues(this.config.style?.density);
         return {
+            ...this.selectedThemeVariables,
             '--zs-prophet-card-bg': this.config.style?.background || this.preset.cardBackground,
             '--zs-prophet-paper': this.config.style?.paper_color || this.preset.paper,
             '--zs-prophet-ink': this.config.style?.ink_color || this.preset.ink,

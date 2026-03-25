@@ -13,6 +13,7 @@ This first version includes:
 - architecture prepared for `Weather Bureau Bulletin` and `Animated Front Page`
 - responsive layout for desktop and mobile
 - flexible YAML API around `weather.*` plus optional sensor overrides
+- a Home Assistant visual config editor for the main card options
 - basic tests for headline and metric presentation logic
 
 ## Vision
