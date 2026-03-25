@@ -69,6 +69,7 @@ export type CardStyleConfig = {
   show_almanac?: boolean;
   show_forecast?: boolean;
   show_alerts?: boolean;
+  debug?: boolean;
 };
 
 export type LayoutConfig = {

@@ -14,6 +14,8 @@ type Dictionary = {
   high: string;
   windShort: string;
   alertLevels: Record<'info' | 'warning' | 'critical', string>;
+  debugTitle: string;
+  debugLabels: Record<string, string>;
   facts: Record<string, string>;
   conditions: Record<string, string>;
   labels: Record<string, string>;
@@ -34,6 +36,15 @@ const TRANSLATIONS: Record<LocaleKey, Dictionary> = {
     low: 'Low',
     high: 'High',
     windShort: 'Wind',
+    debugTitle: 'Diagnostics',
+    debugLabels: {
+      forecast_source: 'Forecast source',
+      forecast_items: 'Forecast items',
+      forecast_mode: 'Forecast mode',
+      weather_entity: 'Weather entity',
+      forecast_entity: 'Forecast bridge',
+      service_status: 'Forecast API',
+    },
     alertLevels: {
       info: 'Notice',
       warning: 'Warning',
@@ -58,6 +69,7 @@ const TRANSLATIONS: Record<LocaleKey, Dictionary> = {
       show_almanac: 'Show almanac',
       show_forecast: 'Show forecast',
       show_alerts: 'Show alerts',
+      debug: 'Debug mode',
       layout: 'Layout',
       mode: 'Layout mode',
       forecast_mode: 'Forecast mode',
@@ -101,6 +113,7 @@ const TRANSLATIONS: Record<LocaleKey, Dictionary> = {
       show_almanac: 'Shows sunrise and sunset blocks.',
       show_forecast: 'Shows the forecast strip.',
       show_alerts: 'Shows the special-edition alert section.',
+      debug: 'Shows a compact diagnostics panel below the card content.',
       mode: 'Frontpage is editorial. Bulletin is for a cleaner report layout.',
       forecast_mode: 'Auto detects whether the forecast is hourly or daily.',
       forecast_items: 'How many forecast entries to render.',
@@ -167,6 +180,15 @@ const TRANSLATIONS: Record<LocaleKey, Dictionary> = {
     low: 'Min',
     high: 'Max',
     windShort: 'Wiatr',
+    debugTitle: 'Diagnostyka',
+    debugLabels: {
+      forecast_source: 'Zrodlo prognozy',
+      forecast_items: 'Pozycje prognozy',
+      forecast_mode: 'Tryb prognozy',
+      weather_entity: 'Encja pogody',
+      forecast_entity: 'Mostek prognozy',
+      service_status: 'Forecast API',
+    },
     alertLevels: {
       info: 'Komunikat',
       warning: 'Ostrzezenie',
@@ -191,6 +213,7 @@ const TRANSLATIONS: Record<LocaleKey, Dictionary> = {
       show_almanac: 'Pokaz almanach',
       show_forecast: 'Pokaz prognoze',
       show_alerts: 'Pokaz alerty',
+      debug: 'Tryb debug',
       layout: 'Uklad',
       mode: 'Tryb ukladu',
       forecast_mode: 'Tryb prognozy',
@@ -234,6 +257,7 @@ const TRANSLATIONS: Record<LocaleKey, Dictionary> = {
       show_almanac: 'Pokazuje bloki wschodu i zachodu slonca.',
       show_forecast: 'Pokazuje pasek prognozy.',
       show_alerts: 'Pokazuje sekcje wydania specjalnego dla ostrzezen.',
+      debug: 'Pokazuje kompaktowy panel diagnostyczny pod trescia karty.',
       mode: 'Frontpage jest bardziej redakcyjny. Bulletin jest bardziej raportowy.',
       forecast_mode: 'Auto wykrywa, czy prognoza jest godzinowa czy dzienna.',
       forecast_items: 'Ile pozycji prognozy pokazac.',

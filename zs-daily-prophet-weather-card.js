@@ -51,6 +51,15 @@ const TRANSLATIONS = {
         low: 'Low',
         high: 'High',
         windShort: 'Wind',
+        debugTitle: 'Diagnostics',
+        debugLabels: {
+            forecast_source: 'Forecast source',
+            forecast_items: 'Forecast items',
+            forecast_mode: 'Forecast mode',
+            weather_entity: 'Weather entity',
+            forecast_entity: 'Forecast bridge',
+            service_status: 'Forecast API',
+        },
         alertLevels: {
             info: 'Notice',
             warning: 'Warning',
@@ -75,6 +84,7 @@ const TRANSLATIONS = {
             show_almanac: 'Show almanac',
             show_forecast: 'Show forecast',
             show_alerts: 'Show alerts',
+            debug: 'Debug mode',
             layout: 'Layout',
             mode: 'Layout mode',
             forecast_mode: 'Forecast mode',
@@ -118,6 +128,7 @@ const TRANSLATIONS = {
             show_almanac: 'Shows sunrise and sunset blocks.',
             show_forecast: 'Shows the forecast strip.',
             show_alerts: 'Shows the special-edition alert section.',
+            debug: 'Shows a compact diagnostics panel below the card content.',
             mode: 'Frontpage is editorial. Bulletin is for a cleaner report layout.',
             forecast_mode: 'Auto detects whether the forecast is hourly or daily.',
             forecast_items: 'How many forecast entries to render.',
@@ -184,6 +195,15 @@ const TRANSLATIONS = {
         low: 'Min',
         high: 'Max',
         windShort: 'Wiatr',
+        debugTitle: 'Diagnostyka',
+        debugLabels: {
+            forecast_source: 'Zrodlo prognozy',
+            forecast_items: 'Pozycje prognozy',
+            forecast_mode: 'Tryb prognozy',
+            weather_entity: 'Encja pogody',
+            forecast_entity: 'Mostek prognozy',
+            service_status: 'Forecast API',
+        },
         alertLevels: {
             info: 'Komunikat',
             warning: 'Ostrzezenie',
@@ -208,6 +228,7 @@ const TRANSLATIONS = {
             show_almanac: 'Pokaz almanach',
             show_forecast: 'Pokaz prognoze',
             show_alerts: 'Pokaz alerty',
+            debug: 'Tryb debug',
             layout: 'Uklad',
             mode: 'Tryb ukladu',
             forecast_mode: 'Tryb prognozy',
@@ -251,6 +272,7 @@ const TRANSLATIONS = {
             show_almanac: 'Pokazuje bloki wschodu i zachodu slonca.',
             show_forecast: 'Pokazuje pasek prognozy.',
             show_alerts: 'Pokazuje sekcje wydania specjalnego dla ostrzezen.',
+            debug: 'Pokazuje kompaktowy panel diagnostyczny pod trescia karty.',
             mode: 'Frontpage jest bardziej redakcyjny. Bulletin jest bardziej raportowy.',
             forecast_mode: 'Auto wykrywa, czy prognoza jest godzinowa czy dzienna.',
             forecast_items: 'Ile pozycji prognozy pokazac.',
@@ -633,6 +655,7 @@ const DEFAULT_CONFIG = {
         show_almanac: true,
         show_forecast: true,
         show_alerts: true,
+        debug: false,
     },
     layout: {
         mode: 'frontpage',
@@ -720,6 +743,8 @@ class ZSDailyProphetCard extends i$2 {
         super(...arguments);
         this.serviceForecast = [];
         this.forecastLoading = false;
+        this.forecastSource = 'weather_entity';
+        this.forecastServiceStatus = 'idle';
         this.lastForecastFetchKey = '';
         this.forecastRequestToken = 0;
     }
@@ -791,6 +816,7 @@ class ZSDailyProphetCard extends i$2 {
                         { name: 'show_almanac', selector: { boolean: {} } },
                         { name: 'show_forecast', selector: { boolean: {} } },
                         { name: 'show_alerts', selector: { boolean: {} } },
+                        { name: 'debug', selector: { boolean: {} } },
                     ],
                 },
                 {
@@ -984,6 +1010,9 @@ class ZSDailyProphetCard extends i$2 {
     get selectedFacts() {
         return this.config.layout?.facts?.length ? this.config.layout.facts : ['humidity', 'wind', 'pressure', 'precipitation'];
     }
+    get isWeatherBureau() {
+        return this.config.style?.preset === 'weather_bureau';
+    }
     get effectiveForecastMode() {
         const configured = this.config.layout?.forecast_mode || 'daily';
         return configured === 'hourly' ? 'hourly' : 'daily';
@@ -1061,6 +1090,8 @@ class ZSDailyProphetCard extends i$2 {
             return;
         }
         if (this.config.entities?.forecast_entity) {
+            this.forecastSource = 'forecast_entity';
+            this.forecastServiceStatus = 'skipped';
             if (this.serviceForecast.length) {
                 this.serviceForecast = [];
             }
@@ -1069,6 +1100,8 @@ class ZSDailyProphetCard extends i$2 {
         const weatherEntity = this.hass.states?.[this.config.entity];
         const directForecast = weatherEntity?.attributes?.forecast;
         if (Array.isArray(directForecast) && directForecast.length) {
+            this.forecastSource = 'weather_entity';
+            this.forecastServiceStatus = 'skipped';
             if (this.serviceForecast.length) {
                 this.serviceForecast = [];
             }
@@ -1087,6 +1120,7 @@ class ZSDailyProphetCard extends i$2 {
         this.lastForecastFetchKey = fetchKey;
         const requestToken = ++this.forecastRequestToken;
         this.forecastLoading = true;
+        this.forecastServiceStatus = 'loading';
         const primaryForecast = await this.fetchForecastFromService(this.effectiveForecastMode);
         const fallbackForecast = !primaryForecast.length && this.effectiveForecastMode === 'daily'
             ? await this.fetchForecastFromService('hourly')
@@ -1095,7 +1129,35 @@ class ZSDailyProphetCard extends i$2 {
             return;
         }
         this.serviceForecast = primaryForecast.length ? primaryForecast : fallbackForecast;
+        this.forecastSource = this.serviceForecast.length ? 'weather_service' : 'unavailable';
+        this.forecastServiceStatus = this.serviceForecast.length ? 'ok' : 'unavailable';
         this.forecastLoading = false;
+    }
+    renderDebugPanel(forecastMode, forecastItems) {
+        if (this.config.style?.debug !== true) {
+            return '';
+        }
+        const debugItems = [
+            { label: this.t.debugLabels.weather_entity, value: this.config.entity || '-' },
+            { label: this.t.debugLabels.forecast_entity, value: this.config.entities?.forecast_entity || '-' },
+            { label: this.t.debugLabels.forecast_source, value: this.forecastSource },
+            { label: this.t.debugLabels.service_status, value: this.forecastServiceStatus },
+            { label: this.t.debugLabels.forecast_mode, value: forecastMode },
+            { label: this.t.debugLabels.forecast_items, value: String(forecastItems.length) },
+        ];
+        return b `
+      <section class="debug-panel">
+        <div class="debug-title">${this.t.debugTitle}</div>
+        <div class="debug-grid">
+          ${debugItems.map((item) => b `
+            <div class="debug-item">
+              <div class="debug-label">${item.label}</div>
+              <div class="debug-value">${item.value}</div>
+            </div>
+          `)}
+        </div>
+      </section>
+    `;
     }
     renderForecastItem(item, mode) {
         const conditionLabel = this.t.conditions[item.condition] || item.condition || '';
@@ -1119,6 +1181,38 @@ class ZSDailyProphetCard extends i$2 {
       </div>
     `;
     }
+    renderHeader(snapshot) {
+        if (this.config.style?.show_masthead === false) {
+            return '';
+        }
+        if (!this.isWeatherBureau) {
+            return b `
+        <div class="masthead">
+          <div class="eyebrow">${this.t.eyebrow}</div>
+          <div class="title">${this.config.title || this.t.defaultTitle}</div>
+          ${this.config.subtitle ? b `<div class="subtitle">${this.config.subtitle}</div>` : ''}
+        </div>
+      `;
+        }
+        return b `
+      <div class="bureau-header">
+        <div class="bureau-bar">
+          <div class="bureau-stamp">${this.t.eyebrow}</div>
+          <div class="bureau-stamp">${snapshot.friendlyName}</div>
+        </div>
+        <div class="bureau-grid">
+          <div class="bureau-title">
+            <div class="title">${this.config.title || this.t.defaultTitle}</div>
+            ${this.config.subtitle ? b `<div class="subtitle">${this.config.subtitle}</div>` : ''}
+          </div>
+          <div class="bureau-meta">
+            <div>${this.t.updated}: ${snapshot.lastUpdatedLabel}</div>
+            <div>${snapshot.state}</div>
+          </div>
+        </div>
+      </div>
+    `;
+    }
     render() {
         if (!this.config || !this.hass) {
             return b `<ha-card><div class="empty">Loading weather edition...</div></ha-card>`;
@@ -1136,23 +1230,19 @@ class ZSDailyProphetCard extends i$2 {
         const conditionLabel = this.t.conditions[snapshot.condition] || snapshot.condition;
         return b `
       <ha-card style=${o(this.computeCardStyle())} @click=${() => this.openMoreInfo()}>
-        <div class=${`frame ${this.config.style?.paper_texture === false ? '' : 'paper-texture'}`}>
-          ${this.config.style?.show_masthead === false ? '' : b `
-            <div class="masthead">
-              <div class="eyebrow">${this.t.eyebrow}</div>
-              <div class="title">${this.config.title || this.t.defaultTitle}</div>
-              ${this.config.subtitle ? b `<div class="subtitle">${this.config.subtitle}</div>` : ''}
-            </div>
-          `}
+        <div class=${`frame ${this.config.style?.paper_texture === false ? '' : 'paper-texture'} ${this.isWeatherBureau ? 'bureau-layout' : ''}`}>
+          ${this.renderHeader(snapshot)}
 
           <section class="hero">
             <div class="lead">
-              <div class="edition-row">
-                <span>${snapshot.friendlyName}</span>
-                <span>${this.t.updated}: ${snapshot.lastUpdatedLabel}</span>
+              <div class="lead-copy">
+                <div class="edition-row">
+                  <span>${snapshot.friendlyName}</span>
+                  <span>${this.t.updated}: ${snapshot.lastUpdatedLabel}</span>
+                </div>
+                ${headline ? b `<div class="headline">${headline}</div>` : ''}
+                <div class="lede">${snapshot.attribution || this.config.location || snapshot.friendlyName}</div>
               </div>
-              ${headline ? b `<div class="headline">${headline}</div>` : ''}
-              <div class="lede">${snapshot.attribution || this.config.location || snapshot.friendlyName}</div>
               <div class="facts">
                 ${facts.map((fact) => b `
                   <div class="fact">
@@ -1165,10 +1255,18 @@ class ZSDailyProphetCard extends i$2 {
 
             <div class=${`hero-side ${this.config.style?.animated_hero ? 'animated' : ''}`}>
               <div class="icon-medallion">${getConditionIcon(snapshot.condition)}</div>
-              <div class="temperature">${snapshot.temperature !== undefined ? `${Math.round(snapshot.temperature)}°` : '-'}</div>
-              <div class="condition">${conditionLabel}</div>
-              <div class="apparent">
-                ${this.t.feelsLike}: ${snapshot.apparentTemperature !== undefined ? `${Math.round(snapshot.apparentTemperature)}°` : '-'}
+              <div class="bureau-reading">
+                <div class="temperature">${snapshot.temperature !== undefined ? `${Math.round(snapshot.temperature)}°` : '-'}</div>
+                <div class="condition">${conditionLabel}</div>
+                <div class="apparent">
+                  ${this.t.feelsLike}: ${snapshot.apparentTemperature !== undefined ? `${Math.round(snapshot.apparentTemperature)}°` : '-'}
+                </div>
+                ${this.isWeatherBureau ? b `
+                  <div class="bureau-summary">
+                    <div>${headline || conditionLabel}</div>
+                    <div>${snapshot.friendlyName}</div>
+                  </div>
+                ` : ''}
               </div>
             </div>
           </section>
@@ -1220,6 +1318,8 @@ class ZSDailyProphetCard extends i$2 {
               </div>
             </section>
           `}
+
+          ${this.renderDebugPanel(forecastMode, forecastItems)}
         </div>
       </ha-card>
     `;
@@ -1230,6 +1330,8 @@ ZSDailyProphetCard.properties = {
     config: { attribute: false },
     serviceForecast: { attribute: false, state: true },
     forecastLoading: { attribute: false, state: true },
+    forecastSource: { attribute: false, state: true },
+    forecastServiceStatus: { attribute: false, state: true },
 };
 ZSDailyProphetCard.styles = i$5 `
     :host {
@@ -1307,6 +1409,68 @@ ZSDailyProphetCard.styles = i$5 `
       border-bottom: 1px solid color-mix(in srgb, var(--zs-prophet-border) 48%, transparent);
     }
 
+    .bureau-header {
+      display: grid;
+      gap: 12px;
+      padding: 0 0 14px;
+      border-bottom: 1px solid color-mix(in srgb, var(--zs-prophet-border) 52%, transparent);
+    }
+
+    .bureau-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px 16px;
+      align-items: center;
+    }
+
+    .bureau-stamp {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--zs-prophet-accent-soft) 100%, transparent);
+      border: 1px solid color-mix(in srgb, var(--zs-prophet-border) 40%, transparent);
+      font-family: var(--zs-prophet-copy);
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--zs-prophet-muted);
+    }
+
+    .bureau-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(180px, 0.9fr);
+      gap: 12px;
+      align-items: end;
+    }
+
+    .bureau-title {
+      display: grid;
+      gap: 4px;
+    }
+
+    .bureau-title .title {
+      font-size: clamp(1.75rem, 4vw, 2.8rem);
+      line-height: 0.98;
+      letter-spacing: 0.06em;
+    }
+
+    .bureau-title .subtitle {
+      font-size: 1rem;
+    }
+
+    .bureau-meta {
+      display: grid;
+      gap: 6px;
+      justify-items: end;
+      text-align: right;
+      font-family: var(--zs-prophet-copy);
+      color: var(--zs-prophet-muted);
+      font-size: 0.96rem;
+    }
+
     .eyebrow,
     .subtitle,
     .edition-row,
@@ -1352,6 +1516,11 @@ ZSDailyProphetCard.styles = i$5 `
       align-items: stretch;
     }
 
+    .bureau-layout .hero {
+      grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.95fr);
+      gap: 14px;
+    }
+
     .lead,
     .hero-side {
       padding: var(--zs-prophet-hero-padding);
@@ -1365,6 +1534,22 @@ ZSDailyProphetCard.styles = i$5 `
       background:
         linear-gradient(180deg, rgba(255,255,255,0.24), rgba(255,255,255,0.08)),
         color-mix(in srgb, var(--zs-prophet-accent-soft) 100%, transparent);
+    }
+
+    .bureau-layout .lead {
+      grid-template-columns: minmax(0, 1.1fr) minmax(190px, 0.8fr);
+      align-items: start;
+      gap: 14px;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04)),
+        rgba(255, 255, 255, 0.08);
+    }
+
+    .lead-copy {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
     }
 
     .edition-row,
@@ -1405,6 +1590,60 @@ ZSDailyProphetCard.styles = i$5 `
         linear-gradient(180deg, rgba(250,240,215,0.82), rgba(227,208,168,0.75));
       overflow: hidden;
       min-height: 260px;
+    }
+
+    .bureau-layout .hero-side {
+      min-height: 0;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.06)),
+        rgba(255, 255, 255, 0.08);
+      align-content: start;
+      grid-template-columns: auto 1fr;
+      grid-template-areas:
+        "icon reading"
+        "icon reading"
+        "icon reading";
+      gap: 14px;
+    }
+
+    .bureau-layout .icon-medallion {
+      grid-area: icon;
+      width: 108px;
+      height: 108px;
+      margin: 0;
+      align-self: start;
+    }
+
+    .bureau-reading {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+      min-width: 0;
+    }
+
+    .bureau-layout .temperature,
+    .bureau-layout .condition,
+    .bureau-layout .apparent {
+      text-align: left;
+    }
+
+    .bureau-layout .temperature {
+      font-size: clamp(2.5rem, 6vw, 4.1rem);
+    }
+
+    .bureau-summary {
+      display: grid;
+      gap: 6px;
+      padding-top: 10px;
+      border-top: 1px dashed color-mix(in srgb, var(--zs-prophet-border) 35%, transparent);
+      font-family: var(--zs-prophet-copy);
+      color: var(--zs-prophet-muted);
+    }
+
+    .bureau-layout .facts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-self: start;
     }
 
     .hero-side.animated::before {
@@ -1495,6 +1734,18 @@ ZSDailyProphetCard.styles = i$5 `
         rgba(255, 248, 230, 0.16);
     }
 
+    .bureau-layout .forecast {
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+
+    .bureau-layout .forecast-item {
+      text-align: left;
+      border-radius: 14px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06)),
+        rgba(255,255,255,0.08);
+    }
+
     .forecast-main {
       display: grid;
       gap: 6px;
@@ -1518,10 +1769,18 @@ ZSDailyProphetCard.styles = i$5 `
       gap: 10px;
     }
 
+    .bureau-layout .alert-list {
+      gap: 8px;
+    }
+
     .alert {
       padding: 14px 16px;
       background: linear-gradient(180deg, rgba(166,56,40,0.12), rgba(141,43,31,0.18));
       color: var(--zs-prophet-alert);
+    }
+
+    .bureau-layout .alert {
+      border-radius: 14px;
     }
 
     .alert.info {
@@ -1605,6 +1864,52 @@ ZSDailyProphetCard.styles = i$5 `
       text-align: center;
     }
 
+    .debug-panel {
+      display: grid;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed color-mix(in srgb, var(--zs-prophet-border) 45%, transparent);
+    }
+
+    .debug-title {
+      font-family: var(--zs-prophet-title);
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .debug-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+    }
+
+    .debug-item {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 248, 230, 0.2);
+      border: 1px solid rgba(104, 73, 39, 0.1);
+    }
+
+    .debug-label,
+    .debug-value {
+      font-family: var(--zs-prophet-copy);
+    }
+
+    .debug-label {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--zs-prophet-muted);
+    }
+
+    .debug-value {
+      margin-top: 4px;
+      font-size: 0.98rem;
+      line-height: 1.15;
+      word-break: break-word;
+    }
+
     @keyframes drift {
       from { transform: translateX(-4%); }
       to { transform: translateX(7%); }
@@ -1613,6 +1918,27 @@ ZSDailyProphetCard.styles = i$5 `
     @media (max-width: 760px) {
       .hero {
         grid-template-columns: 1fr;
+      }
+
+      .bureau-grid,
+      .bureau-layout .lead,
+      .bureau-layout .hero-side {
+        grid-template-columns: 1fr;
+      }
+
+      .bureau-meta {
+        justify-items: start;
+        text-align: left;
+      }
+
+      .bureau-layout .icon-medallion {
+        margin: 0 auto;
+      }
+
+      .bureau-layout .temperature,
+      .bureau-layout .condition,
+      .bureau-layout .apparent {
+        text-align: center;
       }
 
       .hero-side {

@@ -34,7 +34,11 @@ Instead of a magical instrument, this card feels like a printed weather edition:
 - `weather_bureau`
 - `animated_frontpage`
 
-The first implementation is tuned for `classic_prophet`, while the other two presets are already available in the API and prepared for visual expansion.
+`classic_prophet` is the newspaper front page treatment.
+
+`weather_bureau` is now a distinct ministry-style bulletin layout with a cleaner report structure.
+
+`animated_frontpage` remains prepared for the next visual phase.
 
 ## Example
 
@@ -108,6 +112,20 @@ Forecast rendering now supports:
 - daily high/low presentation when `templow` is present
 
 Alerts support one or more entities in `entities.alerts`.
+
+If you want troubleshooting details without losing the normal newspaper copy, enable:
+
+```yaml
+style:
+  debug: true
+```
+
+This adds a compact diagnostics panel showing whether forecast data came from:
+
+- the weather entity itself
+- the Home Assistant weather service
+- a configured forecast bridge entity
+- or nowhere at all
 
 Useful alert attributes if your entity exposes them:
 

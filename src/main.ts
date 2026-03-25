@@ -29,6 +29,7 @@ const DEFAULT_CONFIG: CardConfig = {
     show_almanac: true,
     show_forecast: true,
     show_alerts: true,
+    debug: false,
   },
   layout: {
     mode: 'frontpage',
@@ -128,6 +129,8 @@ class ZSDailyProphetCard extends LitElement {
     config: { attribute: false },
     serviceForecast: { attribute: false, state: true },
     forecastLoading: { attribute: false, state: true },
+    forecastSource: { attribute: false, state: true },
+    forecastServiceStatus: { attribute: false, state: true },
   };
 
   static getStubConfig() {
@@ -200,6 +203,7 @@ class ZSDailyProphetCard extends LitElement {
             { name: 'show_almanac', selector: { boolean: {} } },
             { name: 'show_forecast', selector: { boolean: {} } },
             { name: 'show_alerts', selector: { boolean: {} } },
+            { name: 'debug', selector: { boolean: {} } },
           ],
         },
         {
@@ -424,6 +428,68 @@ class ZSDailyProphetCard extends LitElement {
       border-bottom: 1px solid color-mix(in srgb, var(--zs-prophet-border) 48%, transparent);
     }
 
+    .bureau-header {
+      display: grid;
+      gap: 12px;
+      padding: 0 0 14px;
+      border-bottom: 1px solid color-mix(in srgb, var(--zs-prophet-border) 52%, transparent);
+    }
+
+    .bureau-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px 16px;
+      align-items: center;
+    }
+
+    .bureau-stamp {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--zs-prophet-accent-soft) 100%, transparent);
+      border: 1px solid color-mix(in srgb, var(--zs-prophet-border) 40%, transparent);
+      font-family: var(--zs-prophet-copy);
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--zs-prophet-muted);
+    }
+
+    .bureau-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(180px, 0.9fr);
+      gap: 12px;
+      align-items: end;
+    }
+
+    .bureau-title {
+      display: grid;
+      gap: 4px;
+    }
+
+    .bureau-title .title {
+      font-size: clamp(1.75rem, 4vw, 2.8rem);
+      line-height: 0.98;
+      letter-spacing: 0.06em;
+    }
+
+    .bureau-title .subtitle {
+      font-size: 1rem;
+    }
+
+    .bureau-meta {
+      display: grid;
+      gap: 6px;
+      justify-items: end;
+      text-align: right;
+      font-family: var(--zs-prophet-copy);
+      color: var(--zs-prophet-muted);
+      font-size: 0.96rem;
+    }
+
     .eyebrow,
     .subtitle,
     .edition-row,
@@ -469,6 +535,11 @@ class ZSDailyProphetCard extends LitElement {
       align-items: stretch;
     }
 
+    .bureau-layout .hero {
+      grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.95fr);
+      gap: 14px;
+    }
+
     .lead,
     .hero-side {
       padding: var(--zs-prophet-hero-padding);
@@ -482,6 +553,22 @@ class ZSDailyProphetCard extends LitElement {
       background:
         linear-gradient(180deg, rgba(255,255,255,0.24), rgba(255,255,255,0.08)),
         color-mix(in srgb, var(--zs-prophet-accent-soft) 100%, transparent);
+    }
+
+    .bureau-layout .lead {
+      grid-template-columns: minmax(0, 1.1fr) minmax(190px, 0.8fr);
+      align-items: start;
+      gap: 14px;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04)),
+        rgba(255, 255, 255, 0.08);
+    }
+
+    .lead-copy {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
     }
 
     .edition-row,
@@ -522,6 +609,60 @@ class ZSDailyProphetCard extends LitElement {
         linear-gradient(180deg, rgba(250,240,215,0.82), rgba(227,208,168,0.75));
       overflow: hidden;
       min-height: 260px;
+    }
+
+    .bureau-layout .hero-side {
+      min-height: 0;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.06)),
+        rgba(255, 255, 255, 0.08);
+      align-content: start;
+      grid-template-columns: auto 1fr;
+      grid-template-areas:
+        "icon reading"
+        "icon reading"
+        "icon reading";
+      gap: 14px;
+    }
+
+    .bureau-layout .icon-medallion {
+      grid-area: icon;
+      width: 108px;
+      height: 108px;
+      margin: 0;
+      align-self: start;
+    }
+
+    .bureau-reading {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+      min-width: 0;
+    }
+
+    .bureau-layout .temperature,
+    .bureau-layout .condition,
+    .bureau-layout .apparent {
+      text-align: left;
+    }
+
+    .bureau-layout .temperature {
+      font-size: clamp(2.5rem, 6vw, 4.1rem);
+    }
+
+    .bureau-summary {
+      display: grid;
+      gap: 6px;
+      padding-top: 10px;
+      border-top: 1px dashed color-mix(in srgb, var(--zs-prophet-border) 35%, transparent);
+      font-family: var(--zs-prophet-copy);
+      color: var(--zs-prophet-muted);
+    }
+
+    .bureau-layout .facts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-self: start;
     }
 
     .hero-side.animated::before {
@@ -612,6 +753,18 @@ class ZSDailyProphetCard extends LitElement {
         rgba(255, 248, 230, 0.16);
     }
 
+    .bureau-layout .forecast {
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+
+    .bureau-layout .forecast-item {
+      text-align: left;
+      border-radius: 14px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06)),
+        rgba(255,255,255,0.08);
+    }
+
     .forecast-main {
       display: grid;
       gap: 6px;
@@ -635,10 +788,18 @@ class ZSDailyProphetCard extends LitElement {
       gap: 10px;
     }
 
+    .bureau-layout .alert-list {
+      gap: 8px;
+    }
+
     .alert {
       padding: 14px 16px;
       background: linear-gradient(180deg, rgba(166,56,40,0.12), rgba(141,43,31,0.18));
       color: var(--zs-prophet-alert);
+    }
+
+    .bureau-layout .alert {
+      border-radius: 14px;
     }
 
     .alert.info {
@@ -722,6 +883,52 @@ class ZSDailyProphetCard extends LitElement {
       text-align: center;
     }
 
+    .debug-panel {
+      display: grid;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed color-mix(in srgb, var(--zs-prophet-border) 45%, transparent);
+    }
+
+    .debug-title {
+      font-family: var(--zs-prophet-title);
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .debug-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+    }
+
+    .debug-item {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 248, 230, 0.2);
+      border: 1px solid rgba(104, 73, 39, 0.1);
+    }
+
+    .debug-label,
+    .debug-value {
+      font-family: var(--zs-prophet-copy);
+    }
+
+    .debug-label {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--zs-prophet-muted);
+    }
+
+    .debug-value {
+      margin-top: 4px;
+      font-size: 0.98rem;
+      line-height: 1.15;
+      word-break: break-word;
+    }
+
     @keyframes drift {
       from { transform: translateX(-4%); }
       to { transform: translateX(7%); }
@@ -730,6 +937,27 @@ class ZSDailyProphetCard extends LitElement {
     @media (max-width: 760px) {
       .hero {
         grid-template-columns: 1fr;
+      }
+
+      .bureau-grid,
+      .bureau-layout .lead,
+      .bureau-layout .hero-side {
+        grid-template-columns: 1fr;
+      }
+
+      .bureau-meta {
+        justify-items: start;
+        text-align: left;
+      }
+
+      .bureau-layout .icon-medallion {
+        margin: 0 auto;
+      }
+
+      .bureau-layout .temperature,
+      .bureau-layout .condition,
+      .bureau-layout .apparent {
+        text-align: center;
       }
 
       .hero-side {
@@ -746,6 +974,8 @@ class ZSDailyProphetCard extends LitElement {
   config!: CardConfig;
   serviceForecast: ForecastItem[] = [];
   forecastLoading = false;
+  forecastSource = 'weather_entity';
+  forecastServiceStatus = 'idle';
   private lastForecastFetchKey = '';
   private forecastRequestToken = 0;
 
@@ -804,6 +1034,10 @@ class ZSDailyProphetCard extends LitElement {
 
   get selectedFacts(): FactKey[] {
     return this.config.layout?.facts?.length ? this.config.layout.facts : ['humidity', 'wind', 'pressure', 'precipitation'];
+  }
+
+  get isWeatherBureau(): boolean {
+    return this.config.style?.preset === 'weather_bureau';
   }
 
   get effectiveForecastMode(): 'hourly' | 'daily' {
@@ -894,6 +1128,8 @@ class ZSDailyProphetCard extends LitElement {
     }
 
     if (this.config.entities?.forecast_entity) {
+      this.forecastSource = 'forecast_entity';
+      this.forecastServiceStatus = 'skipped';
       if (this.serviceForecast.length) {
         this.serviceForecast = [];
       }
@@ -903,6 +1139,8 @@ class ZSDailyProphetCard extends LitElement {
     const weatherEntity = this.hass.states?.[this.config.entity] as any;
     const directForecast = weatherEntity?.attributes?.forecast;
     if (Array.isArray(directForecast) && directForecast.length) {
+      this.forecastSource = 'weather_entity';
+      this.forecastServiceStatus = 'skipped';
       if (this.serviceForecast.length) {
         this.serviceForecast = [];
       }
@@ -924,6 +1162,7 @@ class ZSDailyProphetCard extends LitElement {
     this.lastForecastFetchKey = fetchKey;
     const requestToken = ++this.forecastRequestToken;
     this.forecastLoading = true;
+    this.forecastServiceStatus = 'loading';
 
     const primaryForecast = await this.fetchForecastFromService(this.effectiveForecastMode);
     const fallbackForecast = !primaryForecast.length && this.effectiveForecastMode === 'daily'
@@ -935,7 +1174,38 @@ class ZSDailyProphetCard extends LitElement {
     }
 
     this.serviceForecast = primaryForecast.length ? primaryForecast : fallbackForecast;
+    this.forecastSource = this.serviceForecast.length ? 'weather_service' : 'unavailable';
+    this.forecastServiceStatus = this.serviceForecast.length ? 'ok' : 'unavailable';
     this.forecastLoading = false;
+  }
+
+  renderDebugPanel(forecastMode: 'hourly' | 'daily', forecastItems: ForecastItem[]) {
+    if (this.config.style?.debug !== true) {
+      return '';
+    }
+
+    const debugItems = [
+      { label: this.t.debugLabels.weather_entity, value: this.config.entity || '-' },
+      { label: this.t.debugLabels.forecast_entity, value: this.config.entities?.forecast_entity || '-' },
+      { label: this.t.debugLabels.forecast_source, value: this.forecastSource },
+      { label: this.t.debugLabels.service_status, value: this.forecastServiceStatus },
+      { label: this.t.debugLabels.forecast_mode, value: forecastMode },
+      { label: this.t.debugLabels.forecast_items, value: String(forecastItems.length) },
+    ];
+
+    return html`
+      <section class="debug-panel">
+        <div class="debug-title">${this.t.debugTitle}</div>
+        <div class="debug-grid">
+          ${debugItems.map((item) => html`
+            <div class="debug-item">
+              <div class="debug-label">${item.label}</div>
+              <div class="debug-value">${item.value}</div>
+            </div>
+          `)}
+        </div>
+      </section>
+    `;
   }
 
   renderForecastItem(item: ForecastItem, mode: 'hourly' | 'daily') {
@@ -962,6 +1232,41 @@ class ZSDailyProphetCard extends LitElement {
     `;
   }
 
+  renderHeader(snapshot: ReturnType<typeof createWeatherSnapshot>) {
+    if (this.config.style?.show_masthead === false) {
+      return '';
+    }
+
+    if (!this.isWeatherBureau) {
+      return html`
+        <div class="masthead">
+          <div class="eyebrow">${this.t.eyebrow}</div>
+          <div class="title">${this.config.title || this.t.defaultTitle}</div>
+          ${this.config.subtitle ? html`<div class="subtitle">${this.config.subtitle}</div>` : ''}
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="bureau-header">
+        <div class="bureau-bar">
+          <div class="bureau-stamp">${this.t.eyebrow}</div>
+          <div class="bureau-stamp">${snapshot.friendlyName}</div>
+        </div>
+        <div class="bureau-grid">
+          <div class="bureau-title">
+            <div class="title">${this.config.title || this.t.defaultTitle}</div>
+            ${this.config.subtitle ? html`<div class="subtitle">${this.config.subtitle}</div>` : ''}
+          </div>
+          <div class="bureau-meta">
+            <div>${this.t.updated}: ${snapshot.lastUpdatedLabel}</div>
+            <div>${snapshot.state}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   render() {
     if (!this.config || !this.hass) {
       return html`<ha-card><div class="empty">Loading weather edition...</div></ha-card>`;
@@ -981,23 +1286,19 @@ class ZSDailyProphetCard extends LitElement {
 
     return html`
       <ha-card style=${styleMap(this.computeCardStyle())} @click=${() => this.openMoreInfo()}>
-        <div class=${`frame ${this.config.style?.paper_texture === false ? '' : 'paper-texture'}`}>
-          ${this.config.style?.show_masthead === false ? '' : html`
-            <div class="masthead">
-              <div class="eyebrow">${this.t.eyebrow}</div>
-              <div class="title">${this.config.title || this.t.defaultTitle}</div>
-              ${this.config.subtitle ? html`<div class="subtitle">${this.config.subtitle}</div>` : ''}
-            </div>
-          `}
+        <div class=${`frame ${this.config.style?.paper_texture === false ? '' : 'paper-texture'} ${this.isWeatherBureau ? 'bureau-layout' : ''}`}>
+          ${this.renderHeader(snapshot)}
 
           <section class="hero">
             <div class="lead">
-              <div class="edition-row">
-                <span>${snapshot.friendlyName}</span>
-                <span>${this.t.updated}: ${snapshot.lastUpdatedLabel}</span>
+              <div class="lead-copy">
+                <div class="edition-row">
+                  <span>${snapshot.friendlyName}</span>
+                  <span>${this.t.updated}: ${snapshot.lastUpdatedLabel}</span>
+                </div>
+                ${headline ? html`<div class="headline">${headline}</div>` : ''}
+                <div class="lede">${snapshot.attribution || this.config.location || snapshot.friendlyName}</div>
               </div>
-              ${headline ? html`<div class="headline">${headline}</div>` : ''}
-              <div class="lede">${snapshot.attribution || this.config.location || snapshot.friendlyName}</div>
               <div class="facts">
                 ${facts.map((fact) => html`
                   <div class="fact">
@@ -1010,10 +1311,18 @@ class ZSDailyProphetCard extends LitElement {
 
             <div class=${`hero-side ${this.config.style?.animated_hero ? 'animated' : ''}`}>
               <div class="icon-medallion">${getConditionIcon(snapshot.condition)}</div>
-              <div class="temperature">${snapshot.temperature !== undefined ? `${Math.round(snapshot.temperature)}°` : '-'}</div>
-              <div class="condition">${conditionLabel}</div>
-              <div class="apparent">
-                ${this.t.feelsLike}: ${snapshot.apparentTemperature !== undefined ? `${Math.round(snapshot.apparentTemperature)}°` : '-'}
+              <div class="bureau-reading">
+                <div class="temperature">${snapshot.temperature !== undefined ? `${Math.round(snapshot.temperature)}°` : '-'}</div>
+                <div class="condition">${conditionLabel}</div>
+                <div class="apparent">
+                  ${this.t.feelsLike}: ${snapshot.apparentTemperature !== undefined ? `${Math.round(snapshot.apparentTemperature)}°` : '-'}
+                </div>
+                ${this.isWeatherBureau ? html`
+                  <div class="bureau-summary">
+                    <div>${headline || conditionLabel}</div>
+                    <div>${snapshot.friendlyName}</div>
+                  </div>
+                ` : ''}
               </div>
             </div>
           </section>
@@ -1065,6 +1374,8 @@ class ZSDailyProphetCard extends LitElement {
               </div>
             </section>
           `}
+
+          ${this.renderDebugPanel(forecastMode, forecastItems)}
         </div>
       </ha-card>
     `;
