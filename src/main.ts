@@ -637,7 +637,8 @@ class ZSDailyProphetCard extends LitElement {
       position: relative;
       display: grid;
       gap: 12px;
-      align-content: space-between;
+      align-content: start;
+      justify-items: center;
       background:
         radial-gradient(circle at 50% 28%, rgba(255,255,255,0.42), transparent 32%),
         linear-gradient(180deg, rgba(250,240,215,0.82), rgba(227,208,168,0.75));
@@ -657,6 +658,12 @@ class ZSDailyProphetCard extends LitElement {
       gap: 8px;
       align-content: start;
       min-width: 0;
+    }
+
+    .hero-side > .bureau-reading {
+      width: 100%;
+      justify-items: center;
+      text-align: center;
     }
 
     .bureau-layout .temperature,
