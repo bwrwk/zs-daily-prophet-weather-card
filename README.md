@@ -38,7 +38,7 @@ Instead of a magical instrument, this card feels like a printed weather edition:
 
 `weather_bureau` is now a distinct ministry-style bulletin layout with a cleaner report structure.
 
-`animated_frontpage` remains prepared for the next visual phase.
+`animated_frontpage` is now available as the most atmospheric preset, with a more cinematic front-page layout and subtle motion layers.
 
 ## Example
 

@@ -1013,6 +1013,9 @@ class ZSDailyProphetCard extends i$2 {
     get isWeatherBureau() {
         return this.config.style?.preset === 'weather_bureau';
     }
+    get isAnimatedFrontPage() {
+        return this.config.style?.preset === 'animated_frontpage';
+    }
     get effectiveForecastMode() {
         const configured = this.config.layout?.forecast_mode || 'daily';
         return configured === 'hourly' ? 'hourly' : 'daily';
@@ -1185,12 +1188,29 @@ class ZSDailyProphetCard extends i$2 {
         if (this.config.style?.show_masthead === false) {
             return '';
         }
-        if (!this.isWeatherBureau) {
+        if (!this.isWeatherBureau && !this.isAnimatedFrontPage) {
             return b `
         <div class="masthead">
           <div class="eyebrow">${this.t.eyebrow}</div>
           <div class="title">${this.config.title || this.t.defaultTitle}</div>
           ${this.config.subtitle ? b `<div class="subtitle">${this.config.subtitle}</div>` : ''}
+        </div>
+      `;
+        }
+        if (this.isAnimatedFrontPage) {
+            return b `
+        <div class="animated-header">
+          <div class="animated-ribbon">${this.t.eyebrow}</div>
+          <div class="animated-grid">
+            <div class="bureau-title">
+              <div class="title">${this.config.title || this.t.defaultTitle}</div>
+              ${this.config.subtitle ? b `<div class="subtitle">${this.config.subtitle}</div>` : ''}
+            </div>
+            <div class="animated-meta">
+              <div>${this.t.updated}: ${snapshot.lastUpdatedLabel}</div>
+              <div>${snapshot.friendlyName}</div>
+            </div>
+          </div>
         </div>
       `;
         }
@@ -1214,7 +1234,7 @@ class ZSDailyProphetCard extends i$2 {
     `;
     }
     renderHero(snapshot, headline, facts, conditionLabel) {
-        if (!this.isWeatherBureau) {
+        if (!this.isWeatherBureau && !this.isAnimatedFrontPage) {
             return b `
         <section class="hero">
           <div class="lead">
@@ -1245,6 +1265,43 @@ class ZSDailyProphetCard extends i$2 {
                 <div class="apparent">
                   ${this.t.feelsLike}: ${snapshot.apparentTemperature !== undefined ? `${Math.round(snapshot.apparentTemperature)}°` : '-'}
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+        }
+        if (this.isAnimatedFrontPage) {
+            return b `
+        <section class="hero animated-hero">
+          <div class="animated-story">
+            <div class="edition-row">
+              <span>${snapshot.friendlyName}</span>
+              <span>${this.t.updated}: ${snapshot.lastUpdatedLabel}</span>
+            </div>
+            ${headline ? b `<div class="headline">${headline}</div>` : ''}
+            <div class="lede">${snapshot.attribution || this.config.location || snapshot.friendlyName}</div>
+            <div class="facts">
+              ${facts.map((fact) => b `
+                <div class="fact">
+                  <div class="fact-label">${fact.label}</div>
+                  <div class="fact-value">${fact.value}</div>
+                </div>
+              `)}
+            </div>
+          </div>
+
+          <div class=${`animated-reading-card ${this.config.style?.animated_hero ? 'animated' : ''}`}>
+            <div class="icon-medallion">${getConditionIcon(snapshot.condition)}</div>
+            <div class="animated-reading">
+              <div class="temperature">${snapshot.temperature !== undefined ? `${Math.round(snapshot.temperature)}°` : '-'}</div>
+              <div class="condition">${conditionLabel}</div>
+              <div class="apparent">
+                ${this.t.feelsLike}: ${snapshot.apparentTemperature !== undefined ? `${Math.round(snapshot.apparentTemperature)}°` : '-'}
+              </div>
+              <div class="animated-summary">
+                <div>${headline || conditionLabel}</div>
+                <div>${snapshot.state}</div>
               </div>
             </div>
           </div>
@@ -1307,7 +1364,7 @@ class ZSDailyProphetCard extends i$2 {
         const conditionLabel = this.t.conditions[snapshot.condition] || snapshot.condition;
         return b `
       <ha-card style=${o(this.computeCardStyle())} @click=${() => this.openMoreInfo()}>
-        <div class=${`frame ${this.config.style?.paper_texture === false ? '' : 'paper-texture'} ${this.isWeatherBureau ? 'bureau-layout' : ''}`}>
+        <div class=${`frame ${this.config.style?.paper_texture === false ? '' : 'paper-texture'} ${this.isWeatherBureau ? 'bureau-layout' : ''} ${this.isAnimatedFrontPage ? 'animated-layout' : ''}`}>
           ${this.renderHeader(snapshot)}
 
           ${this.renderHero(snapshot, headline, facts, conditionLabel)}
@@ -1512,6 +1569,60 @@ ZSDailyProphetCard.styles = i$5 `
       font-size: 0.96rem;
     }
 
+    .animated-header {
+      position: relative;
+      display: grid;
+      gap: 12px;
+      padding: 0 0 16px;
+      border-bottom: 1px solid color-mix(in srgb, var(--zs-prophet-border) 50%, transparent);
+      overflow: hidden;
+    }
+
+    .animated-header::before {
+      content: "";
+      position: absolute;
+      inset: -12% -8% auto -8%;
+      height: 120px;
+      background:
+        radial-gradient(circle at 20% 50%, rgba(255,255,255,0.28), transparent 28%),
+        radial-gradient(circle at 80% 35%, rgba(255,214,143,0.22), transparent 24%);
+      filter: blur(12px);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .animated-ribbon {
+      position: relative;
+      display: inline-flex;
+      justify-self: start;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--zs-prophet-border) 44%, transparent);
+      background: linear-gradient(180deg, rgba(255,248,229,0.14), rgba(255,248,229,0.04));
+      font-family: var(--zs-prophet-copy);
+      font-size: 0.86rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--zs-prophet-muted);
+    }
+
+    .animated-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(180px, 0.8fr);
+      gap: 14px;
+      align-items: end;
+    }
+
+    .animated-meta {
+      display: grid;
+      gap: 6px;
+      justify-items: end;
+      text-align: right;
+      font-family: var(--zs-prophet-copy);
+      color: var(--zs-prophet-muted);
+    }
+
     .eyebrow,
     .subtitle,
     .edition-row,
@@ -1590,6 +1701,13 @@ ZSDailyProphetCard.styles = i$5 `
       align-items: stretch;
     }
 
+    .animated-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(260px, 0.92fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
     .bureau-story,
     .bureau-reading-card,
     .bureau-facts {
@@ -1599,6 +1717,85 @@ ZSDailyProphetCard.styles = i$5 `
       background:
         linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04)),
         rgba(255,255,255,0.08);
+    }
+
+    .animated-story,
+    .animated-reading-card {
+      position: relative;
+      padding: var(--zs-prophet-hero-padding);
+      border-radius: 22px;
+      border: 1px solid rgba(104, 73, 39, 0.16);
+      overflow: hidden;
+    }
+
+    .animated-story {
+      display: grid;
+      gap: 12px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04)),
+        radial-gradient(circle at top left, rgba(255,224,165,0.14), transparent 32%),
+        rgba(255,255,255,0.06);
+    }
+
+    .animated-reading-card {
+      display: grid;
+      gap: 14px;
+      justify-items: center;
+      align-content: center;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255,255,255,0.26), transparent 26%),
+        linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04)),
+        rgba(255,255,255,0.06);
+      min-height: 360px;
+    }
+
+    .animated-reading-card::before,
+    .animated-reading-card::after {
+      content: "";
+      position: absolute;
+      inset: auto;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    .animated-reading-card::before {
+      width: 180px;
+      height: 54px;
+      top: 84px;
+      left: 22px;
+      background: radial-gradient(circle, rgba(255,255,255,0.3), rgba(255,255,255,0));
+      filter: blur(10px);
+      animation: drift 10s ease-in-out infinite alternate;
+      opacity: 0.7;
+    }
+
+    .animated-reading-card::after {
+      width: 120px;
+      height: 120px;
+      right: -16px;
+      bottom: 24px;
+      background: radial-gradient(circle, rgba(255,205,129,0.18), rgba(255,205,129,0));
+      filter: blur(16px);
+      opacity: 0.85;
+    }
+
+    .animated-reading {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .animated-summary {
+      display: grid;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px dashed color-mix(in srgb, var(--zs-prophet-border) 38%, transparent);
+      font-family: var(--zs-prophet-copy);
+      color: var(--zs-prophet-muted);
+      text-align: center;
     }
 
     .bureau-story {
@@ -1812,6 +2009,19 @@ ZSDailyProphetCard.styles = i$5 `
         rgba(255,255,255,0.08);
     }
 
+    .animated-layout .forecast {
+      grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+    }
+
+    .animated-layout .forecast-item {
+      border-radius: 20px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.04)),
+        radial-gradient(circle at top, rgba(255,223,166,0.12), transparent 40%),
+        rgba(255,255,255,0.05);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+
     .forecast-main {
       display: grid;
       gap: 6px;
@@ -1847,6 +2057,11 @@ ZSDailyProphetCard.styles = i$5 `
 
     .bureau-layout .alert {
       border-radius: 14px;
+    }
+
+    .animated-layout .alert {
+      border-radius: 18px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
     }
 
     .alert.info {
@@ -1992,7 +2207,17 @@ ZSDailyProphetCard.styles = i$5 `
         grid-template-columns: 1fr;
       }
 
+      .animated-grid,
+      .animated-hero {
+        grid-template-columns: 1fr;
+      }
+
       .bureau-meta {
+        justify-items: start;
+        text-align: left;
+      }
+
+      .animated-meta {
         justify-items: start;
         text-align: left;
       }
