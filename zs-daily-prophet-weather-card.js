@@ -1237,12 +1237,14 @@ class ZSDailyProphetCard extends i$2 {
           </div>
 
           <div class=${`hero-side ${this.config.style?.animated_hero ? 'animated' : ''}`}>
-            <div class="icon-medallion">${getConditionIcon(snapshot.condition)}</div>
-            <div class="bureau-reading">
-              <div class="temperature">${snapshot.temperature !== undefined ? `${Math.round(snapshot.temperature)}°` : '-'}</div>
-              <div class="condition">${conditionLabel}</div>
-              <div class="apparent">
-                ${this.t.feelsLike}: ${snapshot.apparentTemperature !== undefined ? `${Math.round(snapshot.apparentTemperature)}°` : '-'}
+            <div class="prophet-reading-card">
+              <div class="icon-medallion">${getConditionIcon(snapshot.condition)}</div>
+              <div class="bureau-reading">
+                <div class="temperature">${snapshot.temperature !== undefined ? `${Math.round(snapshot.temperature)}°` : '-'}</div>
+                <div class="condition">${conditionLabel}</div>
+                <div class="apparent">
+                  ${this.t.feelsLike}: ${snapshot.apparentTemperature !== undefined ? `${Math.round(snapshot.apparentTemperature)}°` : '-'}
+                </div>
               </div>
             </div>
           </div>
@@ -1655,15 +1657,19 @@ ZSDailyProphetCard.styles = i$5 `
 
     .hero-side {
       position: relative;
-      display: grid;
-      gap: 12px;
-      align-content: start;
-      justify-items: center;
+      display: block;
       background:
         radial-gradient(circle at 50% 28%, rgba(255,255,255,0.42), transparent 32%),
         linear-gradient(180deg, rgba(250,240,215,0.82), rgba(227,208,168,0.75));
       overflow: hidden;
       min-height: 260px;
+    }
+
+    .prophet-reading-card {
+      display: grid;
+      gap: 14px;
+      justify-items: center;
+      align-content: start;
     }
 
     .bureau-reading-card .icon-medallion {
@@ -1680,7 +1686,7 @@ ZSDailyProphetCard.styles = i$5 `
       min-width: 0;
     }
 
-    .hero-side > .bureau-reading {
+    .prophet-reading-card > .bureau-reading {
       width: 100%;
       justify-items: center;
       text-align: center;
