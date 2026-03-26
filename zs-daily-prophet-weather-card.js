@@ -1272,36 +1272,45 @@ class ZSDailyProphetCard extends i$2 {
       `;
         }
         if (this.isAnimatedFrontPage) {
+            const stageClass = `animated-stage condition-${snapshot.condition || 'cloudy'}`;
             return b `
         <section class="hero animated-hero">
-          <div class="animated-story">
-            <div class="edition-row">
-              <span>${snapshot.friendlyName}</span>
-              <span>${this.t.updated}: ${snapshot.lastUpdatedLabel}</span>
+          <div class=${stageClass}>
+            <div class="animated-sky" aria-hidden="true">
+              <div class="animated-cloud a"></div>
+              <div class="animated-cloud b"></div>
+              <div class="animated-rain"></div>
             </div>
-            ${headline ? b `<div class="headline">${headline}</div>` : ''}
-            <div class="lede">${snapshot.attribution || this.config.location || snapshot.friendlyName}</div>
-            <div class="facts">
-              ${facts.map((fact) => b `
-                <div class="fact">
-                  <div class="fact-label">${fact.label}</div>
-                  <div class="fact-value">${fact.value}</div>
-                </div>
-              `)}
-            </div>
-          </div>
 
-          <div class=${`animated-reading-card ${this.config.style?.animated_hero ? 'animated' : ''}`}>
-            <div class="icon-medallion">${getConditionIcon(snapshot.condition)}</div>
-            <div class="animated-reading">
-              <div class="temperature">${snapshot.temperature !== undefined ? `${Math.round(snapshot.temperature)}°` : '-'}</div>
-              <div class="condition">${conditionLabel}</div>
-              <div class="apparent">
-                ${this.t.feelsLike}: ${snapshot.apparentTemperature !== undefined ? `${Math.round(snapshot.apparentTemperature)}°` : '-'}
+            <div class="animated-story">
+              <div class="edition-row">
+                <span>${snapshot.friendlyName}</span>
+                <span>${this.t.updated}: ${snapshot.lastUpdatedLabel}</span>
               </div>
-              <div class="animated-summary">
-                <div>${headline || conditionLabel}</div>
-                <div>${snapshot.state}</div>
+              ${headline ? b `<div class="headline">${headline}</div>` : ''}
+              <div class="lede">${snapshot.attribution || this.config.location || snapshot.friendlyName}</div>
+              <div class="facts">
+                ${facts.map((fact) => b `
+                  <div class="fact">
+                    <div class="fact-label">${fact.label}</div>
+                    <div class="fact-value">${fact.value}</div>
+                  </div>
+                `)}
+              </div>
+            </div>
+
+            <div class=${`animated-reading-card ${this.config.style?.animated_hero ? 'animated' : ''}`}>
+              <div class="icon-medallion">${getConditionIcon(snapshot.condition)}</div>
+              <div class="animated-reading">
+                <div class="temperature">${snapshot.temperature !== undefined ? `${Math.round(snapshot.temperature)}°` : '-'}</div>
+                <div class="condition">${conditionLabel}</div>
+                <div class="apparent">
+                  ${this.t.feelsLike}: ${snapshot.apparentTemperature !== undefined ? `${Math.round(snapshot.apparentTemperature)}°` : '-'}
+                </div>
+                <div class="animated-summary">
+                  <div>${headline || conditionLabel}</div>
+                  <div>${snapshot.state}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -1708,10 +1717,7 @@ ZSDailyProphetCard.styles = i$5 `
     }
 
     .animated-hero {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
-      align-items: stretch;
+      display: block;
     }
 
     .bureau-story,
@@ -1725,48 +1731,132 @@ ZSDailyProphetCard.styles = i$5 `
         rgba(255,255,255,0.08);
     }
 
-    .animated-story,
-    .animated-reading-card {
+    .animated-stage {
       position: relative;
-      padding: var(--zs-prophet-hero-padding);
-      border-radius: 22px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) 220px;
+      gap: 18px;
+      padding: 20px;
+      border-radius: 28px;
       border: 1px solid rgba(104, 73, 39, 0.16);
       overflow: hidden;
-    }
-
-    .animated-story {
-      display: grid;
-      gap: 12px;
       background:
-        linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04)),
-        radial-gradient(circle at top left, rgba(255,224,165,0.14), transparent 32%),
-        rgba(255,255,255,0.06);
+        linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.04)),
+        radial-gradient(circle at top left, rgba(255,224,165,0.18), transparent 32%),
+        linear-gradient(180deg, rgba(236, 214, 171, 0.78), rgba(213, 181, 122, 0.58));
+      min-height: 420px;
     }
 
-    .animated-story::before {
+    .animated-stage::before {
       content: "";
       position: absolute;
-      top: -18px;
-      right: -12px;
-      width: 120px;
-      height: 120px;
-      background: radial-gradient(circle, rgba(255,215,146,0.22), rgba(255,215,146,0));
-      filter: blur(12px);
-      opacity: 0.8;
-      animation: pulseGlow 8s ease-in-out infinite;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.2), transparent 30%),
+        radial-gradient(circle at 82% 16%, rgba(255,244,217,0.34), transparent 18%);
       pointer-events: none;
     }
 
+    .animated-stage.condition-rainy::after,
+    .animated-stage.condition-pouring::after,
+    .animated-stage.condition-lightning_rainy::after {
+      content: "";
+      position: absolute;
+      inset: -20% 0 0 0;
+      background-image: linear-gradient(180deg, rgba(126, 119, 155, 0.22), rgba(126, 119, 155, 0));
+      pointer-events: none;
+    }
+
+    .animated-sky {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .animated-cloud {
+      position: absolute;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255,255,255,0.44), rgba(255,255,255,0.05));
+      filter: blur(4px);
+      opacity: 0.9;
+    }
+
+    .animated-cloud.a {
+      width: 170px;
+      height: 58px;
+      top: 58px;
+      left: 18px;
+      animation: drift 14s ease-in-out infinite alternate;
+    }
+
+    .animated-cloud.b {
+      width: 110px;
+      height: 42px;
+      top: 132px;
+      left: 140px;
+      animation: drift 17s ease-in-out infinite alternate-reverse;
+      opacity: 0.75;
+    }
+
+    .animated-rain {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .animated-stage.condition-rainy .animated-rain,
+    .animated-stage.condition-pouring .animated-rain,
+    .animated-stage.condition-lightning_rainy .animated-rain {
+      opacity: 1;
+    }
+
+    .animated-rain::before,
+    .animated-rain::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(110deg, transparent 0 46%, rgba(120, 124, 162, 0.24) 47%, transparent 49%, transparent 100%);
+      background-size: 28px 28px;
+      animation: rainFall 1.15s linear infinite;
+    }
+
+    .animated-rain::after {
+      animation-duration: 1.55s;
+      opacity: 0.7;
+      transform: translateX(10px);
+    }
+
+    .animated-story {
+      position: relative;
+      z-index: 1;
+      align-self: end;
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 22px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.3), rgba(255,255,255,0.08)),
+        rgba(255, 248, 230, 0.18);
+      backdrop-filter: blur(6px);
+    }
+
     .animated-reading-card {
+      position: relative;
+      z-index: 1;
       display: grid;
       gap: 14px;
       justify-items: center;
       align-content: center;
+      padding: 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(104, 73, 39, 0.16);
       background:
         radial-gradient(circle at 50% 20%, rgba(255,255,255,0.26), transparent 26%),
-        linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04)),
-        rgba(255,255,255,0.06);
-      min-height: 360px;
+        linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05)),
+        rgba(255,255,255,0.08);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
     }
 
     .animated-reading-card::before,
@@ -1781,8 +1871,8 @@ ZSDailyProphetCard.styles = i$5 `
     .animated-reading-card::before {
       width: 180px;
       height: 54px;
-      top: 84px;
-      left: 22px;
+      top: 42px;
+      left: 12px;
       background: radial-gradient(circle, rgba(255,255,255,0.3), rgba(255,255,255,0));
       filter: blur(10px);
       animation: drift 10s ease-in-out infinite alternate;
@@ -2245,6 +2335,11 @@ ZSDailyProphetCard.styles = i$5 `
       to { background-position: -40% 0; }
     }
 
+    @keyframes rainFall {
+      from { transform: translateY(-10px); }
+      to { transform: translateY(24px); }
+    }
+
     @media (max-width: 760px) {
       .hero {
         grid-template-columns: 1fr;
@@ -2263,6 +2358,11 @@ ZSDailyProphetCard.styles = i$5 `
 
       .animated-meta {
         justify-content: flex-start;
+      }
+
+      .animated-stage {
+        grid-template-columns: 1fr;
+        min-height: 0;
       }
 
       .bureau-reading-card .icon-medallion {
