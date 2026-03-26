@@ -647,7 +647,8 @@ class ZSDailyProphetCard extends LitElement {
       display: grid;
       gap: 14px;
       justify-items: center;
-      align-content: start;
+      align-content: center;
+      min-height: 100%;
     }
 
     .bureau-reading-card .icon-medallion {
