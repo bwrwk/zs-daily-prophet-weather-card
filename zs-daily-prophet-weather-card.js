@@ -1609,18 +1609,24 @@ ZSDailyProphetCard.styles = i$5 `
     .animated-grid {
       position: relative;
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(180px, 0.8fr);
-      gap: 14px;
-      align-items: end;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      align-items: start;
     }
 
     .animated-meta {
-      display: grid;
-      gap: 6px;
-      justify-items: end;
-      text-align: right;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      align-items: center;
       font-family: var(--zs-prophet-copy);
       color: var(--zs-prophet-muted);
+    }
+
+    .animated-header .title {
+      font-size: clamp(1.85rem, 4.8vw, 3rem);
+      line-height: 0.96;
+      letter-spacing: 0.06em;
     }
 
     .eyebrow,
@@ -1703,7 +1709,7 @@ ZSDailyProphetCard.styles = i$5 `
 
     .animated-hero {
       display: grid;
-      grid-template-columns: minmax(0, 1.08fr) minmax(260px, 0.92fr);
+      grid-template-columns: 1fr;
       gap: 16px;
       align-items: stretch;
     }
@@ -1735,6 +1741,20 @@ ZSDailyProphetCard.styles = i$5 `
         linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04)),
         radial-gradient(circle at top left, rgba(255,224,165,0.14), transparent 32%),
         rgba(255,255,255,0.06);
+    }
+
+    .animated-story::before {
+      content: "";
+      position: absolute;
+      top: -18px;
+      right: -12px;
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, rgba(255,215,146,0.22), rgba(255,215,146,0));
+      filter: blur(12px);
+      opacity: 0.8;
+      animation: pulseGlow 8s ease-in-out infinite;
+      pointer-events: none;
     }
 
     .animated-reading-card {
@@ -1777,6 +1797,7 @@ ZSDailyProphetCard.styles = i$5 `
       background: radial-gradient(circle, rgba(255,205,129,0.18), rgba(255,205,129,0));
       filter: blur(16px);
       opacity: 0.85;
+      animation: pulseGlow 9s ease-in-out infinite;
     }
 
     .animated-reading {
@@ -1796,6 +1817,17 @@ ZSDailyProphetCard.styles = i$5 `
       font-family: var(--zs-prophet-copy);
       color: var(--zs-prophet-muted);
       text-align: center;
+    }
+
+    .animated-reading-card.animated .icon-medallion {
+      animation: floatSeal 5.8s ease-in-out infinite;
+    }
+
+    .animated-reading-card.animated .animated-summary {
+      animation: shimmer 7s linear infinite;
+      background-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+      background-size: 180% 100%;
+      background-repeat: no-repeat;
     }
 
     .bureau-story {
@@ -2196,6 +2228,23 @@ ZSDailyProphetCard.styles = i$5 `
       to { transform: translateX(7%); }
     }
 
+    @keyframes floatSeal {
+      0% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-8px) scale(1.02); }
+      100% { transform: translateY(0px) scale(1); }
+    }
+
+    @keyframes pulseGlow {
+      0% { opacity: 0.45; transform: scale(0.96); }
+      50% { opacity: 0.9; transform: scale(1.05); }
+      100% { opacity: 0.45; transform: scale(0.96); }
+    }
+
+    @keyframes shimmer {
+      from { background-position: 140% 0; }
+      to { background-position: -40% 0; }
+    }
+
     @media (max-width: 760px) {
       .hero {
         grid-template-columns: 1fr;
@@ -2207,19 +2256,13 @@ ZSDailyProphetCard.styles = i$5 `
         grid-template-columns: 1fr;
       }
 
-      .animated-grid,
-      .animated-hero {
-        grid-template-columns: 1fr;
-      }
-
       .bureau-meta {
         justify-items: start;
         text-align: left;
       }
 
       .animated-meta {
-        justify-items: start;
-        text-align: left;
+        justify-content: flex-start;
       }
 
       .bureau-reading-card .icon-medallion {
